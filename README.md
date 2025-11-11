@@ -304,7 +304,6 @@ pip install --force-reinstall -r requirements.txt
 
 For documentation issues:
 - **GitHub Issues**: Report bugs or suggest improvements
-- **Email**: soporte@lexgo.cl
 - **Slack**: #documentation channel
 
 ## License

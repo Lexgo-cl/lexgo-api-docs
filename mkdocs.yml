@@ -1,0 +1,112 @@
+site_name: LexgoSign API Documentation
+site_description: Complete API reference for LexgoSign electronic signature platform
+site_author: Lexgo
+site_url: https://docs.lexgo.cl
+
+# Repository
+repo_name: Lexgo-cl/lexgo-api-docs
+repo_url: https://github.com/Lexgo-cl/lexgo-api-docs
+edit_uri: ""
+
+# Theme
+theme:
+  name: material
+  language: en
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+# Extensions
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+# Navigation
+nav:
+  - Home:
+    - index.md
+    - Getting Started: getting-started/introduction.md
+    - API Reference: api/overview.md
+    - Guides: guides/email-validation.md
+    - Examples: examples/create-envelope.md
+    - Changelog: changelog.md
+  - Getting Started:
+    - Introduction: getting-started/introduction.md
+    - Authentication: getting-started/authentication.md
+    - Quick Start: getting-started/quick-start.md
+  - API Reference:
+    - Overview: api/overview.md
+    - Envelopes: api/envelopes.md
+    - Recipients: api/recipients.md
+    - Validations (2FA): api/validations.md
+    - Settings: api/settings.md
+    - Webhooks: api/webhooks.md
+    - Error Codes: api/errors.md
+  - Guides:
+    - Email Validation (2FA): guides/email-validation.md
+    - Custom Email Templates: guides/email-templates.md
+    - Webhook Integration: guides/webhook-integration.md
+    - Evidence Sheet: guides/evidence-sheet.md
+  - Examples:
+    - Create and Send Envelope: examples/create-envelope.md
+    - Email Validation Flow: examples/email-validation-flow.md
+    - Webhook Subscriptions: examples/webhook-subscriptions.md
+  - Changelog: changelog.md
+
+# Plugins
+plugins:
+  - search
+  - tags
+
+# Extra
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Lexgo-cl
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/lexgohq
+  analytics:
+    provider: google
+    property: UA-XXXXXXXXX-X
