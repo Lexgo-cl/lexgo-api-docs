@@ -298,13 +298,13 @@ pip install --force-reinstall -r requirements.txt
 - [MkDocs Documentation](https://www.mkdocs.org/)
 - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)
 - [Markdown Guide](https://www.markdownguide.org/)
-- [Lexgo Website](https://www.lexgo.cl)
-- [LexgoSign API](https://docs.lexgo.cl)
+- [LexgoSign API](https://api.lexgo.cl)
 
 ## Support
 
 For documentation issues:
 - **GitHub Issues**: Report bugs or suggest improvements
+- **Slack**: #documentation channel
 
 ## License
 
