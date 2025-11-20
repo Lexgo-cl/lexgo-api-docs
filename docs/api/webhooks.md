@@ -7,6 +7,7 @@ Webhooks enable real-time notifications when events occur in LexgoSign.
 Subscribe to events and receive HTTP POST requests to your server when:
 
 - Envelopes change status
+- Files are uploaded via presigned URLs
 - Evidence sheets are generated
 - Recipients sign documents
 - Emails are delivered or opened
@@ -22,6 +23,7 @@ Subscribe to events and receive HTTP POST requests to your server when:
 | `envelope.success` | All recipients signed |
 | `envelope.voided` | Envelope cancelled |
 | `envelope.evidence_generated` | Evidence sheet PDF generated and available |
+| `envelope.file_uploaded` | File uploaded via presigned URL and ready |
 
 ### Recipient Events
 
@@ -89,6 +91,30 @@ curl -X POST https://api.lexgo.cl/api/v1/webhooks \
 ## Webhook Payload
 
 When an event occurs, LexgoSign sends a POST request:
+
+### File Upload Event Example
+
+When a presigned upload completes processing:
+
+```json
+{
+  "id": "event_abc123",
+  "event_type": "envelope.file_uploaded",
+  "data": {
+    "envelope_id": "51f8ad72-0b51-4bf4-ab7f-6575e4f68ad5",
+    "presigned_upload_id": "upload_xyz789",
+    "file_id": "b66efe2d-a3c8-43d6-80d2-1f4e71fa0216",
+    "order": 0,
+    "file_name": "contract.pdf",
+    "custom_key": "main_doc",
+    "status": "COMPLETED",
+    "uploaded_at": "2025-11-20T19:20:15-03:00",
+    "processed_at": "2025-11-20T19:20:18-03:00"
+  }
+}
+```
+
+Use this event to know when presigned uploads are ready. See [Presigned Uploads API](presigned-uploads.md).
 
 ### Recipient Event Example
 
