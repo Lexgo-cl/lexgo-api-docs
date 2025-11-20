@@ -218,6 +218,101 @@ Retrieve details of a specific envelope.
 
 ---
 
+### Update Envelope
+
+Update an existing envelope before it's sent to recipients.
+
+**Endpoint:** `PUT /api/v1/envelopes/:id`
+
+!!! info "Update Restrictions"
+    Envelopes can only be updated while in `CREATED` or `ERROR` status. Once sent (`IN_PROGRESS`), updates are no longer allowed.
+
+!!! tip "Error Recovery"
+    If an envelope is in `ERROR` status and you fix the validation errors, the status will automatically transition back to `CREATED`.
+
+=== "Request"
+    ```http
+    PUT /api/v1/envelopes/abc-123 HTTP/1.1
+    Host: api.lexgo.cl
+    Authorization: YOUR_API_KEY
+    Content-Type: multipart/form-data
+
+    name=Updated Employment Contract
+    documents[0][base64]=JVBERi0xLjQKJeLj...
+    documents[0][name]=updated-contract.pdf
+    recipients[0][name]=Jane Smith
+    recipients[0][email]=jane.smith@example.com
+    placements[0][document_key]=0
+    placements[0][recipient_key]=0
+    placements[0][coordinates][page]=0
+    placements[0][coordinates][top]=100
+    placements[0][coordinates][left]=100
+    ```
+
+=== "Response (200 OK)"
+    ```json
+    {
+      "envelope": {
+        "id": "abc-123-def-456",
+        "name": "Updated Employment Contract",
+        "status": "CREATED",
+        "errors": [],
+        "updated_at": "2024-01-15T11:30:00Z"
+      },
+      "request_id": "req-update123"
+    }
+    ```
+
+=== "Response (405 Method Not Allowed)"
+    ```json
+    {
+      "error": "Envelope can only be updated when in CREATED status",
+      "request_id": "req-update456"
+    }
+    ```
+
+=== "Response (422 Unprocessable Content)"
+    ```json
+    {
+      "error": "Update failed",
+      "message": "Invalid document format",
+      "request_id": "req-update789"
+    }
+    ```
+
+**Request Parameters:**
+
+All parameters are optional. Only include the components you want to update.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | No | Update envelope name |
+| `documents[key][...]` | object | No | Replace all documents (deletion by omission) |
+| `recipients[key][...]` | object | No | Replace all recipients (deletion by omission) |
+| `placements[key][...]` | object | No | Replace all placements (deletion by omission) |
+| `settings[...]` | object | No | Update settings (see [Settings API](settings.md)) |
+
+!!! warning "Replacement Behavior"
+    When you update a component (documents, recipients, or placements), **all existing items are replaced**. To delete an item, simply omit it from the update. To keep existing items, include them in the update.
+
+**Update Scenarios:**
+
+| Scenario | Parameters | Result |
+|----------|-----------|--------|
+| Update name only | `name=New Name` | Name changes, everything else unchanged |
+| Replace documents | `documents[0][...]` | All old documents deleted, new ones added |
+| Update settings | `settings[...]` | Settings merged with defaults |
+| Fix validation errors | Any params that fix errors | Status transitions from `ERROR` → `CREATED` |
+
+**Status Transitions:**
+
+- `CREATED` → `CREATED`: Normal update
+- `ERROR` → `CREATED`: Automatic when validation errors are fixed
+- `ERROR` → `ERROR`: When validation errors still exist
+- `IN_PROGRESS`, `SUCCESS`, `VOIDED`: Updates not allowed (returns 405)
+
+---
+
 ### Send Envelope
 
 Send the envelope to recipients for signing.
