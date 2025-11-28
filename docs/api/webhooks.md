@@ -114,7 +114,7 @@ When a presigned upload completes processing:
 }
 ```
 
-Use this event to know when presigned uploads are ready. See [Presigned Uploads API](presigned-uploads.md).
+Use this event to know when uploads are ready. See [Uploads API](uploads.md).
 
 ### Recipient Event Example
 
