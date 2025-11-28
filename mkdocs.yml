@@ -77,7 +77,7 @@ nav:
   - API Reference:
     - Overview: api/overview.md
     - Envelopes: api/envelopes.md
-    - Presigned Uploads: api/presigned-uploads.md
+    - File Uploads: api/uploads.md
     - Recipients: api/recipients.md
     - Validations (2FA): api/validations.md
     - Settings: api/settings.md
@@ -88,7 +88,7 @@ nav:
     - Custom Email Templates: guides/email-templates.md
     - Webhook Integration: guides/webhook-integration.md
     - Evidence Sheet: guides/evidence-sheet.md
-    - Presigned Uploads Guide: guides/presigned-uploads-guide.md
+    - File Uploads Guide: guides/uploads-guide.md
   - Examples:
     - Create and Send Envelope: examples/create-envelope.md
     - Email Validation Flow: examples/email-validation-flow.md
