@@ -27,11 +27,11 @@ CREATED → IN_PROGRESS → SUCCESS
 
 Create a new envelope with documents and recipients.
 
-**Endpoint:** `POST /api/v1/envelopes`
+**Endpoint:** `POST /v1/envelopes`
 
 === "Request"
     ```http
-    POST /api/v1/envelopes HTTP/1.1
+    POST /v1/envelopes HTTP/1.1
     Host: api.lexgo.cl
     Authorization: YOUR_API_KEY
     Content-Type: multipart/form-data
@@ -128,7 +128,7 @@ Use `placements[index][field]` where `index` is a numeric index (0, 1, 2...).
 **Example with Placements:**
 
 ```http
-POST /api/v1/envelopes HTTP/1.1
+POST /v1/envelopes HTTP/1.1
 Host: api.lexgo.cl
 Authorization: YOUR_API_KEY
 Content-Type: multipart/form-data
@@ -164,11 +164,11 @@ placements[0][token]={custom_signature_token}
 
 Retrieve details of a specific envelope.
 
-**Endpoint:** `GET /api/v1/envelopes/:id`
+**Endpoint:** `GET /v1/envelopes/:id`
 
 === "Request"
     ```bash
-    curl https://api.lexgo.cl/api/v1/envelopes/abc-123-def-456 \
+    curl https://api.lexgo.cl/v1/envelopes/abc-123-def-456 \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -222,7 +222,7 @@ Retrieve details of a specific envelope.
 
 Update an existing envelope before it's sent to recipients.
 
-**Endpoint:** `PUT /api/v1/envelopes/:id`
+**Endpoint:** `PUT /v1/envelopes/:id`
 
 !!! info "Update Restrictions"
     Envelopes can only be updated while in `CREATED` or `ERROR` status. Once sent (`IN_PROGRESS`), updates are no longer allowed.
@@ -232,7 +232,7 @@ Update an existing envelope before it's sent to recipients.
 
 === "Request"
     ```http
-    PUT /api/v1/envelopes/abc-123 HTTP/1.1
+    PUT /v1/envelopes/abc-123 HTTP/1.1
     Host: api.lexgo.cl
     Authorization: YOUR_API_KEY
     Content-Type: multipart/form-data
@@ -317,14 +317,14 @@ All parameters are optional. Only include the components you want to update.
 
 Send the envelope to recipients for signing.
 
-**Endpoint:** `POST /api/v1/envelopes/:id/send_invitation`
+**Endpoint:** `POST /v1/envelopes/:id/send_invitation`
 
 !!! warning "One-Time Operation"
     An envelope can only be sent once. After sending, the envelope transitions from `CREATED` to `IN_PROGRESS`.
 
 === "Request"
     ```bash
-    curl -X POST https://api.lexgo.cl/api/v1/envelopes/abc-123/send_invitation \
+    curl -X POST https://api.lexgo.cl/v1/envelopes/abc-123/send_invitation \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -356,14 +356,14 @@ Send the envelope to recipients for signing.
 
 Cancel an envelope before completion.
 
-**Endpoint:** `PUT /api/v1/envelopes/:id/void`
+**Endpoint:** `PUT /v1/envelopes/:id/void`
 
 !!! warning "Irreversible"
     Voiding an envelope cannot be undone. Recipients will no longer be able to access or sign the documents.
 
 === "Request"
     ```bash
-    curl -X PUT https://api.lexgo.cl/api/v1/envelopes/abc-123/void \
+    curl -X PUT https://api.lexgo.cl/v1/envelopes/abc-123/void \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -398,14 +398,14 @@ Cancel an envelope before completion.
 
 Retrieve the evidence sheet URL for a completed envelope.
 
-**Endpoint:** `GET /api/v1/envelopes/:id/evidence`
+**Endpoint:** `GET /v1/envelopes/:id/evidence`
 
 !!! success "Optimized Performance"
     This endpoint uses intelligent async caching for **20-50x faster** response times on subsequent requests.
 
 === "Request"
     ```bash
-    curl https://api.lexgo.cl/api/v1/envelopes/abc-123/evidence \
+    curl https://api.lexgo.cl/v1/envelopes/abc-123/evidence \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -449,7 +449,7 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     import base64
     import time
 
-    API_BASE = "https://api.lexgo.cl/api/v1"
+    API_BASE = "https://api.lexgo.cl/v1"
     API_KEY = "your_api_key_here"
     headers = {
         "Authorization": API_KEY
@@ -523,7 +523,7 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     const FormData = require('form-data');
     const fs = require('fs');
 
-    const API_BASE = 'https://api.lexgo.cl/api/v1';
+    const API_BASE = 'https://api.lexgo.cl/v1';
     const API_KEY = 'your_api_key_here';
 
     async function createAndSendEnvelope() {
@@ -579,7 +579,7 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     require 'net/http'
     require 'base64'
 
-    API_BASE = 'https://api.lexgo.cl/api/v1'
+    API_BASE = 'https://api.lexgo.cl/v1'
     API_KEY = 'your_api_key_here'
 
     # 1. Create envelope

@@ -64,7 +64,7 @@ Webhooks enable real-time notifications when events occur (envelope sent, signed
 
 | Version | Status | Base URL |
 |---------|--------|----------|
-| v1 | Current | `https://api.lexgo.cl/api/v1` |
+| v1 | Current | `https://api.lexgo.cl/v1` |
 
 ## Security
 

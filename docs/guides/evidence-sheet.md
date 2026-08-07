@@ -47,7 +47,7 @@ Once an envelope reaches `SUCCESS` status:
 
 === "cURL"
     ```bash
-    curl https://api.lexgo.cl/api/v1/envelopes/{envelope_id}/evidence \
+    curl https://api.lexgo.cl/v1/envelopes/{envelope_id}/evidence \
       -H "Authorization: Bearer YOUR_API_KEY"
     ```
 
@@ -59,7 +59,7 @@ Once an envelope reaches `SUCCESS` status:
     headers = {"Authorization": f"Bearer {API_KEY}"}
 
     response = requests.get(
-        f"https://api.lexgo.cl/api/v1/envelopes/{envelope_id}/evidence",
+        f"https://api.lexgo.cl/v1/envelopes/{envelope_id}/evidence",
         headers=headers
     )
 
@@ -71,7 +71,7 @@ Once an envelope reaches `SUCCESS` status:
     ```javascript
     const envelopeId = 'abc-123';
     const response = await fetch(
-      `https://api.lexgo.cl/api/v1/envelopes/${envelopeId}/evidence`,
+      `https://api.lexgo.cl/v1/envelopes/${envelopeId}/evidence`,
       {
         headers: {
           'Authorization': `Bearer ${API_KEY}`
@@ -343,7 +343,7 @@ print(f"Status: {envelope['status']}")
 import requests
 import time
 
-API_BASE = "https://api.lexgo.cl/api/v1"
+API_BASE = "https://api.lexgo.cl/v1"
 headers = {"Authorization": f"Bearer {API_KEY}"}
 
 def wait_for_envelope_completion(envelope_id, timeout=3600):

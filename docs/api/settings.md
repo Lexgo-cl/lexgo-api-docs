@@ -21,7 +21,7 @@ Configure default settings for:
 
 Retrieve current configuration settings.
 
-**Endpoint:** `GET /api/v1/settings`
+**Endpoint:** `GET /v1/settings`
 
 ### Query Parameters
 
@@ -35,13 +35,13 @@ Retrieve current configuration settings.
 
 === "All Settings"
     ```bash
-    curl https://api.lexgo.cl/api/v1/settings \
+    curl https://api.lexgo.cl/v1/settings \
       -H "Authorization: YOUR_API_KEY"
     ```
 
 === "Filtered by Scope"
     ```bash
-    curl "https://api.lexgo.cl/api/v1/settings?scope=documents,emails,signature_flow" \
+    curl "https://api.lexgo.cl/v1/settings?scope=documents,emails,signature_flow" \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -110,12 +110,12 @@ Retrieve current configuration settings.
 
 Update default configuration settings.
 
-**Endpoint:** `PUT /api/v1/settings`
+**Endpoint:** `PUT /v1/settings`
 
 ### Request
 
 ```bash
-curl -X PUT https://api.lexgo.cl/api/v1/settings \
+curl -X PUT https://api.lexgo.cl/v1/settings \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -389,7 +389,7 @@ Configure default email validation (2FA) behavior.
 ### Request
 
 ```bash
-curl -X PUT https://api.lexgo.cl/api/v1/settings \
+curl -X PUT https://api.lexgo.cl/v1/settings \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

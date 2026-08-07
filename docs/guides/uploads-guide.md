@@ -11,7 +11,7 @@ Use file uploads when your PDF files are larger than 1MB. For smaller files, use
 ### Step 1: Create Envelope (No Documents)
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/envelopes \
+curl -X POST https://api.lexgo.cl/v1/envelopes \
   -H "Authorization: YOUR_API_KEY" \
   -F "name=Contract - John Doe" \
   -F "recipients[0][name]=John Doe" \
@@ -24,7 +24,7 @@ Save the `envelope.id` from the response.
 ### Step 2: Request Upload URL
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID/uploads \
+curl -X POST https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID/uploads \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -49,7 +49,7 @@ curl -X PUT "UPLOAD_URL" \
 **Option A: Poll for completion**
 
 ```bash
-curl https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID/uploads/UPLOAD_ID \
+curl https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID/uploads/UPLOAD_ID \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -60,7 +60,7 @@ Check `upload.status` in response. Repeat every 2 seconds until `COMPLETED`.
 Subscribe to `envelope.file_uploaded` event:
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/webhooks \
+curl -X POST https://api.lexgo.cl/v1/webhooks \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -74,7 +74,7 @@ Your webhook will receive notification when file is ready (no polling needed).
 ### Step 5: Verify Documents Attached
 
 ```bash
-curl https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID \
+curl https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -86,7 +86,7 @@ Check the response:
 ### Step 6: Send Envelope
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID/send_invitation \
+curl -X POST https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID/send_invitation \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -101,7 +101,7 @@ Save this as `upload_contract.sh`:
 set -e
 
 # Configuration
-API_BASE="https://api.lexgo.cl/api/v1"
+API_BASE="https://api.lexgo.cl/v1"
 API_KEY="YOUR_API_KEY"
 PDF_FILE="$1"
 
@@ -255,7 +255,7 @@ import time
 import sys
 import os
 
-API_BASE = "https://api.lexgo.cl/api/v1"
+API_BASE = "https://api.lexgo.cl/v1"
 API_KEY = "YOUR_API_KEY"
 
 def create_envelope():
@@ -432,7 +432,7 @@ python upload_contract.py contract.pdf
 
 ```bash
 # Get error details
-curl https://api.lexgo.cl/api/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
+curl https://api.lexgo.cl/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
   -H "Authorization: YOUR_API_KEY" | jq '.upload.error_message'
 
 # Common errors:
@@ -447,7 +447,7 @@ curl https://api.lexgo.cl/api/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
 
 ```bash
 # Check existing uploads
-curl https://api.lexgo.cl/api/v1/envelopes/$ENVELOPE_ID/uploads \
+curl https://api.lexgo.cl/v1/envelopes/$ENVELOPE_ID/uploads \
   -H "Authorization: YOUR_API_KEY" | jq '.uploads[] | select(.order == 0)'
 
 # Wait for completion or use different order number

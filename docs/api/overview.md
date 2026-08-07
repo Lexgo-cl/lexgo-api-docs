@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-https://api.lexgo.cl/api/v1
+https://api.lexgo.cl/v1
 ```
 
 ## Authentication
@@ -174,7 +174,7 @@ Currently, the API does not implement pagination. All results are returned in a 
 The API version is included in the URL path:
 
 ```
-/api/v1/envelopes
+/v1/envelopes
      ^^
   version
 ```
@@ -209,8 +209,8 @@ Safe HTTP methods (GET, PUT, DELETE) are idempotent:
 All API requests must use HTTPS. Requests made over plain HTTP will fail:
 
 ```
-https://api.lexgo.cl/api/v1/envelopes  ✅
-http://api.lexgo.cl/api/v1/envelopes   ❌
+https://api.lexgo.cl/v1/envelopes  ✅
+http://api.lexgo.cl/v1/envelopes   ❌
 ```
 
 ## CORS

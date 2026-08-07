@@ -41,12 +41,12 @@ Use standard envelope creation (base64) when:
 
 Generate an upload URL for a document.
 
-**Endpoint:** `POST /api/v1/envelopes/:envelope_id/uploads`
+**Endpoint:** `POST /v1/envelopes/:envelope_id/uploads`
 
 **Request:**
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/envelopes/abc-123/uploads \
+curl -X POST https://api.lexgo.cl/v1/envelopes/abc-123/uploads \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -139,12 +139,12 @@ curl -X PUT "{upload_url}" \
 
 Check processing status of an upload.
 
-**Endpoint:** `GET /api/v1/envelopes/:envelope_id/uploads/:id`
+**Endpoint:** `GET /v1/envelopes/:envelope_id/uploads/:id`
 
 **Request:**
 
 ```bash
-curl https://api.lexgo.cl/api/v1/envelopes/abc-123/uploads/upload_abc123 \
+curl https://api.lexgo.cl/v1/envelopes/abc-123/uploads/upload_abc123 \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -173,17 +173,17 @@ curl https://api.lexgo.cl/api/v1/envelopes/abc-123/uploads/upload_abc123 \
 
 Get all uploads for an envelope.
 
-**Endpoint:** `GET /api/v1/envelopes/:envelope_id/uploads`
+**Endpoint:** `GET /v1/envelopes/:envelope_id/uploads`
 
 **Request:**
 
 ```bash
 # Get all uploads
-curl https://api.lexgo.cl/api/v1/envelopes/abc-123/uploads \
+curl https://api.lexgo.cl/v1/envelopes/abc-123/uploads \
   -H "Authorization: YOUR_API_KEY"
 
 # Filter by status
-curl "https://api.lexgo.cl/api/v1/envelopes/abc-123/uploads?status=completed" \
+curl "https://api.lexgo.cl/v1/envelopes/abc-123/uploads?status=completed" \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -213,7 +213,7 @@ curl "https://api.lexgo.cl/api/v1/envelopes/abc-123/uploads?status=completed" \
 Subscribe to `envelope.file_uploaded` for real-time notifications instead of polling:
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/webhooks \
+curl -X POST https://api.lexgo.cl/v1/webhooks \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -232,7 +232,7 @@ See [Webhooks API](webhooks.md) for complete documentation.
 
 ```bash
 # Step 1: Create envelope
-ENVELOPE_JSON=$(curl -s -X POST https://api.lexgo.cl/api/v1/envelopes \
+ENVELOPE_JSON=$(curl -s -X POST https://api.lexgo.cl/v1/envelopes \
   -H "Authorization: YOUR_API_KEY" \
   -F "name=Contract - John Doe" \
   -F "recipients[0][name]=John Doe" \
@@ -243,7 +243,7 @@ ENVELOPE_ID=$(echo "$ENVELOPE_JSON" | jq -r '.envelope.id')
 
 # Step 2: Request upload URL
 UPLOAD_JSON=$(curl -s -X POST \
-  "https://api.lexgo.cl/api/v1/envelopes/${ENVELOPE_ID}/uploads" \
+  "https://api.lexgo.cl/v1/envelopes/${ENVELOPE_ID}/uploads" \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"file_name":"contract.pdf","order":0}')
@@ -260,7 +260,7 @@ curl -X PUT "$UPLOAD_URL" \
 # Step 4: Wait for processing
 for i in {1..30}; do
   STATUS_JSON=$(curl -s \
-    "https://api.lexgo.cl/api/v1/envelopes/${ENVELOPE_ID}/uploads/${UPLOAD_ID}" \
+    "https://api.lexgo.cl/v1/envelopes/${ENVELOPE_ID}/uploads/${UPLOAD_ID}" \
     -H "Authorization: YOUR_API_KEY")
 
   STATUS=$(echo "$STATUS_JSON" | jq -r '.upload.status')
@@ -273,12 +273,12 @@ for i in {1..30}; do
 done
 
 # Step 5: Verify envelope has documents
-curl "https://api.lexgo.cl/api/v1/envelopes/${ENVELOPE_ID}" \
+curl "https://api.lexgo.cl/v1/envelopes/${ENVELOPE_ID}" \
   -H "Authorization: YOUR_API_KEY" | jq '.envelope.documents'
 
 # Step 6: Send envelope
 curl -X POST \
-  "https://api.lexgo.cl/api/v1/envelopes/${ENVELOPE_ID}/send_invitation" \
+  "https://api.lexgo.cl/v1/envelopes/${ENVELOPE_ID}/send_invitation" \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -299,7 +299,7 @@ curl -X POST \
 **Solution:** Check error_message in upload status response:
 
 ```bash
-curl https://api.lexgo.cl/api/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
+curl https://api.lexgo.cl/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
   -H "Authorization: YOUR_API_KEY" | jq '.upload.error_message'
 ```
 
