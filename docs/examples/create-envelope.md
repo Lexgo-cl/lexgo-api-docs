@@ -9,7 +9,7 @@ import requests
 import base64
 
 API_KEY = 'your_api_key_here'
-BASE_URL = 'https://api.lexgo.cl/v1'
+BASE_URL = 'https://api.lexgo.cl/api/v1'
 
 # Read and encode PDF
 with open('contract.pdf', 'rb') as f:

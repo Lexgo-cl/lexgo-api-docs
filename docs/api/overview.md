@@ -1,20 +1,59 @@
 # API Overview
 
+Lexgo exposes two public HTTP surfaces. This overview covers both; most pages
+under API Reference document the LexgoSign `/api/v1` envelope API.
+
+| Surface | Base path | Auth |
+|---------|-----------|------|
+| **LexgoSign API** | `/api/v1` | API key in `Authorization` |
+| **Client API** | `/api/client` | OAuth Bearer (`client` scope) + `X-Enterprise-Id` |
+
+!!! note "Gateway path"
+    Externally, `api.lexgo.cl` strips the `/api` prefix. Call
+    `https://api.lexgo.cl/v1/...` or `https://api.lexgo.cl/client/...`.
+
 ## Base URL
 
+### LexgoSign API
+
 ```
-https://api.lexgo.cl/v1
+https://api.lexgo.cl/api/v1
 ```
+
+### Client API
+
+```
+https://api.lexgo.cl/api/client
+```
+
+!!! note "Gateway path"
+    Externally, the `/api` prefix is stripped: call `https://api.lexgo.cl/client/…`
+
+!!! note "Sandbox vs Live"
+    Sandbox is an API **key stage**, not a different host. Use the same
+    `api.lexgo.cl` base URL with a sandbox or live key. There is no
+    `sandbox-api.lexgo.cl`. See [Sandbox vs Live](../guides/sandbox.md).
 
 ## Authentication
 
-All API requests require authentication via the `Authorization` header:
+### LexgoSign API
+
+All LexgoSign requests require an API key in the `Authorization` header:
 
 ```
 Authorization: YOUR_API_KEY
 ```
 
 See [Authentication](../getting-started/authentication.md) for details.
+
+### Client API
+
+```
+Authorization: Bearer <oauth_access_token>
+X-Enterprise-Id: <enterprise_uuid>
+```
+
+See [Signing Reminders](reminders.md) for a Client API example.
 
 ## Request Format
 
@@ -120,6 +159,14 @@ See [Settings API](settings.md) for detailed documentation.
 
 See [Webhooks API](webhooks.md) for detailed documentation.
 
+### Signing Reminders (Client API)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/client/documents/:id/reminders` | Schedule an email reminder for a signing document |
+
+See [Signing Reminders](reminders.md) for detailed documentation.
+
 ## Request IDs
 
 Every API response includes a `request_id` field:
@@ -174,7 +221,7 @@ Currently, the API does not implement pagination. All results are returned in a 
 The API version is included in the URL path:
 
 ```
-/v1/envelopes
+/api/v1/envelopes
      ^^
   version
 ```
@@ -209,8 +256,8 @@ Safe HTTP methods (GET, PUT, DELETE) are idempotent:
 All API requests must use HTTPS. Requests made over plain HTTP will fail:
 
 ```
-https://api.lexgo.cl/v1/envelopes  ✅
-http://api.lexgo.cl/v1/envelopes   ❌
+https://api.lexgo.cl/api/v1/envelopes  ✅
+http://api.lexgo.cl/api/v1/envelopes   ❌
 ```
 
 ## CORS
@@ -230,3 +277,4 @@ See [Error Codes](errors.md) for complete error documentation.
 - [Envelopes API](envelopes.md) - Create and manage envelopes
 - [Validations API](validations.md) - Implement 2FA email verification
 - [Webhooks API](webhooks.md) - Subscribe to real-time events
+- [Signing Reminders](reminders.md) - Schedule Client API signing reminders

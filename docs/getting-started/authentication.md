@@ -29,7 +29,7 @@ Authorization: YOUR_API_KEY_HERE
 
 === "cURL"
     ```bash
-    curl https://api.lexgo.cl/v1/envelopes \
+    curl https://api.lexgo.cl/api/v1/envelopes \
       -H "Authorization: your_api_key_here" \
       -H "Content-Type: application/json"
     ```
@@ -44,7 +44,7 @@ Authorization: YOUR_API_KEY_HERE
     }
 
     response = requests.get(
-        'https://api.lexgo.cl/v1/envelopes',
+        'https://api.lexgo.cl/api/v1/envelopes',
         headers=headers
     )
     ```
@@ -58,7 +58,7 @@ Authorization: YOUR_API_KEY_HERE
         'Content-Type': 'application/json'
     };
 
-    fetch('https://api.lexgo.cl/v1/envelopes', { headers })
+    fetch('https://api.lexgo.cl/api/v1/envelopes', { headers })
         .then(res => res.json())
         .then(data => console.log(data));
     ```
@@ -68,7 +68,7 @@ Authorization: YOUR_API_KEY_HERE
     require 'net/http'
     require 'json'
 
-    uri = URI('https://api.lexgo.cl/v1/envelopes')
+    uri = URI('https://api.lexgo.cl/api/v1/envelopes')
     headers = {
       'Authorization' => 'your_api_key_here',
       'Content-Type' => 'application/json'
@@ -81,11 +81,11 @@ Authorization: YOUR_API_KEY_HERE
 
 After getting your API key, test it with the test endpoint:
 
-**Endpoint**: `POST /v1/test`
+**Endpoint**: `POST /api/v1/test`
 
 === "cURL"
     ```bash
-    curl -X POST https://api.lexgo.cl/v1/test \
+    curl -X POST https://api.lexgo.cl/api/v1/test \
       -H "Authorization: your_api_key_here" \
       -F "test_param=Sample value 123"
     ```
@@ -95,7 +95,7 @@ After getting your API key, test it with the test endpoint:
     import requests
 
     response = requests.post(
-        'https://api.lexgo.cl/v1/test',
+        'https://api.lexgo.cl/api/v1/test',
         headers={'Authorization': 'your_api_key_here'},
         data={'test_param': 'Sample value 123'}
     )
@@ -116,7 +116,7 @@ After getting your API key, test it with the test endpoint:
     const form = new FormData();
     form.append('test_param', 'Sample value 123');
 
-    fetch('https://api.lexgo.cl/v1/test', {
+    fetch('https://api.lexgo.cl/api/v1/test', {
       method: 'POST',
       headers: { 'Authorization': 'your_api_key_here' },
       body: form
@@ -193,9 +193,13 @@ After getting your API key, test it with the test endpoint:
 ### Multiple Keys
 You can create multiple API keys for different purposes:
 
-- **Sandbox**: Test integration without legal validity (documents are watermarked)
+- **Sandbox**: Test integration without legal validity (documents are watermarked; recipient emails limited to your team)
 - **Live**: Production use with legally binding signatures
 - **Per-Application**: Create separate keys for different applications or integrations
+
+Sandbox and live are **key stages on the same host** (`https://api.lexgo.cl`) —
+there is no separate `sandbox-api` URL. See [Sandbox vs Live](../guides/sandbox.md)
+for the full allowlist, watermark, and `QUALIFIED_CHILE` rules.
 
 ### Key Rotation
 Regularly rotate your API keys for security:

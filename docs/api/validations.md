@@ -31,13 +31,13 @@ Send a 6-digit verification code to the recipient's email address.
 ### Endpoint
 
 ```
-POST /v1/envelopes/:envelope_id/recipients/:recipient_id/validations/send_code
+POST /api/v1/envelopes/:envelope_id/recipients/:recipient_id/validations/send_code
 ```
 
 ### Request
 
 ```bash
-curl -X POST https://api.lexgo.cl/v1/envelopes/550e8400-e29b-41d4-a716-446655440000/recipients/123e4567-e89b-12d3-a456-426614174000/validations/send_code \
+curl -X POST https://api.lexgo.cl/api/v1/envelopes/550e8400-e29b-41d4-a716-446655440000/recipients/123e4567-e89b-12d3-a456-426614174000/validations/send_code \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json"
 ```
@@ -129,13 +129,13 @@ Verify a submitted 6-digit code.
 ### Endpoint
 
 ```
-POST /v1/envelopes/:envelope_id/recipients/:recipient_id/validations/verify_code
+POST /api/v1/envelopes/:envelope_id/recipients/:recipient_id/validations/verify_code
 ```
 
 ### Request
 
 ```bash
-curl -X POST https://api.lexgo.cl/v1/envelopes/550e8400-e29b-41d4-a716-446655440000/recipients/123e4567-e89b-12d3-a456-426614174000/validations/verify_code \
+curl -X POST https://api.lexgo.cl/api/v1/envelopes/550e8400-e29b-41d4-a716-446655440000/recipients/123e4567-e89b-12d3-a456-426614174000/validations/verify_code \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"code": "123456"}'
@@ -223,7 +223,7 @@ Occurs when no code has been sent or all codes have been used/expired.
 import requests
 import time
 
-BASE_URL = 'https://api.lexgo.cl/v1'
+BASE_URL = 'https://api.lexgo.cl/api/v1'
 ENVELOPE_ID = '550e8400-e29b-41d4-a716-446655440000'
 RECIPIENT_ID = '123e4567-e89b-12d3-a456-426614174000'
 
@@ -267,7 +267,7 @@ else:
 ```javascript
 const fetch = require('node-fetch');
 
-const BASE_URL = 'https://api.lexgo.cl/v1';
+const BASE_URL = 'https://api.lexgo.cl/api/v1';
 const ENVELOPE_ID = '550e8400-e29b-41d4-a716-446655440000';
 const RECIPIENT_ID = '123e4567-e89b-12d3-a456-426614174000';
 

@@ -55,13 +55,13 @@ Subscribe to events and receive HTTP POST requests to your server when:
 ### Endpoint
 
 ```http
-POST /v1/webhooks
+POST /api/v1/webhooks
 ```
 
 ### Request
 
 ```bash
-curl -X POST https://api.lexgo.cl/v1/webhooks \
+curl -X POST https://api.lexgo.cl/api/v1/webhooks \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -279,14 +279,14 @@ envelope information: documents, recipients, signature placements, and all confi
 ## List Webhooks
 
 ```bash
-curl https://api.lexgo.cl/v1/webhooks \
+curl https://api.lexgo.cl/api/v1/webhooks \
   -H "Authorization: YOUR_API_KEY"
 ```
 
 ## Update Webhook
 
 ```bash
-curl -X PUT https://api.lexgo.cl/v1/webhooks/{webhook_id} \
+curl -X PUT https://api.lexgo.cl/api/v1/webhooks/{webhook_id} \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -297,7 +297,7 @@ curl -X PUT https://api.lexgo.cl/v1/webhooks/{webhook_id} \
 ## Delete Webhook
 
 ```bash
-curl -X DELETE https://api.lexgo.cl/v1/webhooks/{webhook_id} \
+curl -X DELETE https://api.lexgo.cl/api/v1/webhooks/{webhook_id} \
   -H "Authorization: YOUR_API_KEY"
 ```
 

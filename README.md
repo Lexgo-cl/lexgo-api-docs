@@ -58,8 +58,10 @@ api/
 │   │   ├── validations.md
 │   │   ├── settings.md
 │   │   ├── webhooks.md
+│   │   ├── reminders.md   # Client API signing reminders
 │   │   └── errors.md
 │   ├── guides/            # Feature guides
+│   │   ├── sandbox.md
 │   │   ├── email-validation.md
 │   │   ├── email-templates.md
 │   │   ├── webhook-integration.md
@@ -67,7 +69,8 @@ api/
 │   ├── examples/          # Code examples
 │   │   ├── create-envelope.md
 │   │   ├── email-validation-flow.md
-│   │   └── webhook-subscriptions.md
+│   │   ├── webhook-subscriptions.md
+│   │   └── schedule-signing-reminder.md
 │   └── changelog.md       # Version history
 └── site/                  # Built site (gitignored)
 ```

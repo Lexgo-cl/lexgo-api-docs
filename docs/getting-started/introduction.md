@@ -52,7 +52,7 @@ API key authentication via `Authorization` header for security and simplicity.
 Safe operations (GET, PUT, DELETE) are idempotent for reliable integrations.
 
 ### Versioning
-API versioned via URL path (`/v1/`) for backward compatibility.
+API versioned via URL path (`/api/v1/`) for backward compatibility.
 
 ## Coming Soon
 

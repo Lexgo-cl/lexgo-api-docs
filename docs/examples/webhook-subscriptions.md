@@ -8,7 +8,7 @@ Complete example for subscribing to webhooks.
 import requests
 
 API_KEY = 'your_api_key_here'
-BASE_URL = 'https://api.lexgo.cl/v1'
+BASE_URL = 'https://api.lexgo.cl/api/v1'
 
 # Create webhook
 response = requests.post(

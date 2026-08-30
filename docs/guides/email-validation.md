@@ -22,7 +22,7 @@ Enable email validation for:
 When creating an envelope, include validation settings:
 
 ```http
-POST /v1/envelopes HTTP/1.1
+POST /api/v1/envelopes HTTP/1.1
 Content-Type: multipart/form-data
 
 name=Confidential Agreement

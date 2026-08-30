@@ -5,6 +5,19 @@ All notable changes to the LexgoSign API will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Sandbox vs Live guide**: Documents sandbox as an API key stage on `api.lexgo.cl`
+  (not a separate host), team-member recipient allowlist, watermark,
+  `QUALIFIED_CHILE` restriction, and how to add allowed emails in Equipos
+  - Docs: [Sandbox vs Live](guides/sandbox.md)
+- **Client API — Signing Reminders**: Schedule email reminders for signing documents
+  - `POST /api/client/documents/:id/reminders`
+  - OAuth (`client` scope) + `X-Enterprise-Id`; requires `contracts:write`
+  - Creates `Alerts::Alert` + `Alerts::Reminder`; delivery via `ReminderWorker`
+  - Docs: [Signing Reminders](api/reminders.md), [Example](examples/schedule-signing-reminder.md)
+
 ## [1.1.1] - 2025-11-10
 
 ### Added
@@ -18,8 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Email Validation (2FA)**: Two-factor authentication via email verification codes
-  - `POST /v1/envelopes/:envelope_id/recipients/:recipient_id/validations/send_code` - Send verification code
-  - `POST /v1/envelopes/:envelope_id/recipients/:recipient_id/validations/verify_code` - Verify code
+  - `POST /api/v1/envelopes/:envelope_id/recipients/:recipient_id/validations/send_code` - Send verification code
+  - `POST /api/v1/envelopes/:envelope_id/recipients/:recipient_id/validations/verify_code` - Verify code
 - **Validation Events**: Six new webhook events for email validation lifecycle
   - `recipient.validation_code_generated` - Code created
   - `recipient.validation_code_sent` - Email delivered
@@ -52,20 +65,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial API release
 - **Envelopes API**:
-  - `POST /v1/envelopes` - Create envelope
-  - `GET /v1/envelopes/:id` - Get envelope details
-  - `POST /v1/envelopes/:id/send_invitation` - Send invitation
-  - `PUT /v1/envelopes/:id/void` - Cancel envelope
-  - `GET /v1/envelopes/:id/evidence` - Get evidence sheet
+  - `POST /api/v1/envelopes` - Create envelope
+  - `GET /api/v1/envelopes/:id` - Get envelope details
+  - `POST /api/v1/envelopes/:id/send_invitation` - Send invitation
+  - `PUT /api/v1/envelopes/:id/void` - Cancel envelope
+  - `GET /api/v1/envelopes/:id/evidence` - Get evidence sheet
 - **Settings API**:
-  - `GET /v1/settings` - Get configuration
-  - `PUT /v1/settings` - Update configuration
+  - `GET /api/v1/settings` - Get configuration
+  - `PUT /api/v1/settings` - Update configuration
 - **Webhooks API**:
-  - `GET /v1/webhooks` - List webhooks
-  - `POST /v1/webhooks` - Create webhook
-  - `GET /v1/webhooks/:id` - Get webhook
-  - `PUT /v1/webhooks/:id` - Update webhook
-  - `DELETE /v1/webhooks/:id` - Delete webhook
+  - `GET /api/v1/webhooks` - List webhooks
+  - `POST /api/v1/webhooks` - Create webhook
+  - `GET /api/v1/webhooks/:id` - Get webhook
+  - `PUT /api/v1/webhooks/:id` - Update webhook
+  - `DELETE /api/v1/webhooks/:id` - Delete webhook
 - **Webhook Events**:
   - Envelope events: `envelope.in_progress`, `envelope.success`, `envelope.voided`
   - Recipient events: `recipient.email_sent`, `recipient.email_received`, `recipient.email_opened`, `recipient.email_clicked`, `recipient.email_bounced`, `recipient.link_generated`, `recipient.in_progress`, `recipient.signed_all`, `recipient.rejected`
