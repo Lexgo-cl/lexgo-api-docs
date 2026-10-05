@@ -1,42 +1,44 @@
 # Webhook Integration Guide
 
-Learn how to integrate LexgoSign webhooks into your application.
+Subscribe through the [Webhooks API](../api/webhooks.md). Subscriptions are
+comma-separated exact event names, for example
+`envelope.success,envelope.sending_failed,recipient.signed_all`.
 
-!!! info "Coming Soon"
-    Detailed webhook integration guide will be added in a future update.
+## Receive and Acknowledge
 
-## Quick Start
+1. Use an HTTPS endpoint and configure `auth_type: "header"` plus an
+   `auth` secret. Verify the exact Authorization header before processing.
+2. Persist the delivery `id` and payload durably before returning a 2xx response.
+3. Process the stored payload asynchronously. Deduplicate by delivery `id`
+   and make business operations idempotent by resource ID.
+4. Acknowledge already-stored duplicate IDs with 2xx.
 
-1. Create a webhook endpoint in your application
-2. Subscribe to events via the API
-3. Process webhook payloads
-4. Respond with 200 OK
+Retries reuse the delivery `id`; independent events or webhook subscriptions
+can have different IDs for the same resource. Do not assume one webhook
+corresponds to one signing action or that events arrive in order.
 
-## Example Endpoint
+## Best-Effort Delivery
 
-```python
-from flask import Flask, request
+Failures and timeouts have up to three scheduled retries after approximately
+5, 10, and 20 seconds. A receiver timeout can occur after you already accepted
+a payload, so duplicates are expected. Delivery is neither guaranteed nor
+exactly once.
 
-app = Flask(__name__)
+The `data` object reflects resource state when the attempt is sent. It can
+change across retries. Use `event_type` to identify the notification and
+retrieve current envelope state before irreversible business actions.
 
-@app.route('/webhooks/lexgo', methods=['POST'])
-def handle_webhook():
-    payload = request.json
-    event_type = payload['event_type']
+## Reconcile with the API
 
-    if event_type == 'envelope.success':
-        # Handle successful envelope
-        envelope = payload['data']
-        process_completed_envelope(envelope)
+Keep envelope IDs from creation. Use `GET /v1/envelopes/:id` periodically and
+after a missed event or interrupted send request to reconcile your local state.
+Inspect `status`, `errors`, and `warnings`; HTTP 200 is not a signing success.
+Track `SENDING` until processing succeeds or fails. Route `ERROR` and
+`envelope.sending_failed` for investigation rather than waiting indefinitely.
 
-    return {'success': True}, 200
-```
-
-## Security
-
-Verify webhook authenticity using the Authorization header.
-
-## Next Steps
+Use notifications for prompt updates and polling for recovery. This guidance
+does not claim that every upstream callback reaches your endpoint.
 
 - [Webhooks API Reference](../api/webhooks.md)
+- [Envelope lifecycle](../api/envelopes.md)
 - [Example: Webhook Subscriptions](../examples/webhook-subscriptions.md)

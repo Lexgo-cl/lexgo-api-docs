@@ -1,12 +1,12 @@
 # API Overview
 
 Lexgo exposes two public HTTP surfaces. This overview covers both; most pages
-under API Reference document the LexgoSign `/api/v1` envelope API.
+under API Reference document the LexgoSign `/v1` envelope API.
 
 | Surface | Base path | Auth |
 |---------|-----------|------|
-| **LexgoSign API** | `/api/v1` | API key in `Authorization` |
-| **Client API** | `/api/client` | OAuth Bearer (`client` scope) + `X-Enterprise-Id` |
+| **LexgoSign API** | `/v1` | API key in `Authorization` |
+| **Client API** | `/client` | OAuth Bearer (`client` scope) + `X-Enterprise-Id` |
 
 !!! note "Gateway path"
     Externally, `api.lexgo.cl` strips the `/api` prefix. Call
@@ -17,13 +17,13 @@ under API Reference document the LexgoSign `/api/v1` envelope API.
 ### LexgoSign API
 
 ```
-https://api.lexgo.cl/api/v1
+https://api.lexgo.cl/v1
 ```
 
 ### Client API
 
 ```
-https://api.lexgo.cl/api/client
+https://api.lexgo.cl/client
 ```
 
 !!! note "Gateway path"
@@ -53,7 +53,7 @@ Authorization: Bearer <oauth_access_token>
 X-Enterprise-Id: <enterprise_uuid>
 ```
 
-See [Signing Reminders](reminders.md) for a Client API example.
+
 
 ## Request Format
 
@@ -94,7 +94,7 @@ All successful responses include the requested data and a `request_id`:
 
 ### Error Response
 
-Error responses include an error message and `request_id`:
+HTTP failures can include an error message and `request_id` (for example, 404 Not Found):
 
 ```json
 {
@@ -103,11 +103,26 @@ Error responses include an error message and `request_id`:
 }
 ```
 
+Creation validation failures return HTTP 422 with the existing envelope response, including `envelope.id`, `status: ERROR`, and actionable `envelope.errors`. Fetching or updating an existing envelope can still return HTTP 200 with validation errors; inspect both HTTP status and the envelope fields:
+
+```json
+{
+  "envelope": {
+    "id": "envelope-id",
+    "status": "ERROR",
+    "errors": ["Validation error"],
+    "warnings": []
+  },
+  "request_id": "request-id"
+}
+```
+
 ## HTTP Status Codes
 
 | Code | Meaning | Description |
 |------|---------|-------------|
-| `200` | OK | Request succeeded |
+| `200` | OK | HTTP request processed; inspect envelope `status`, `errors`, and `warnings` |
+| `202` | Accepted | Send accepted asynchronously; envelope is `SENDING` |
 | `401` | Unauthorized | Missing or invalid API key |
 | `404` | Not Found | Resource doesn't exist |
 | `405` | Method Not Allowed | Invalid operation for resource state |
@@ -123,7 +138,7 @@ Error responses include an error message and `request_id`:
 |--------|----------|-------------|
 | `POST` | `/envelopes` | Create a new envelope |
 | `GET` | `/envelopes/:id` | Get envelope details |
-| `POST` | `/envelopes/:id/send_invitation` | Send envelope to recipients |
+| `PUT` | `/envelopes/:id/send` | Send envelope to recipients |
 | `PUT` | `/envelopes/:id/void` | Cancel an envelope |
 | `GET` | `/envelopes/:id/evidence` | Get evidence sheet URL |
 
@@ -159,13 +174,6 @@ See [Settings API](settings.md) for detailed documentation.
 
 See [Webhooks API](webhooks.md) for detailed documentation.
 
-### Signing Reminders (Client API)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/client/documents/:id/reminders` | Schedule an email reminder for a signing document |
-
-See [Signing Reminders](reminders.md) for detailed documentation.
 
 ## Request IDs
 
@@ -221,7 +229,7 @@ Currently, the API does not implement pagination. All results are returned in a 
 The API version is included in the URL path:
 
 ```
-/api/v1/envelopes
+/v1/envelopes
      ^^
   version
 ```
@@ -243,21 +251,23 @@ When we deprecate an API version:
 
 ## Idempotency
 
-Safe HTTP methods (GET, PUT, DELETE) are idempotent:
+GET reads the current resource state; it can change while signing proceeds.
+Do not assume repeated state-changing requests return the same response:
+`PUT /v1/envelopes/:id/send` accepts a valid CREATED envelope with HTTP 202,
+then rejects another send once its status has changed. Updates can rebuild
+an unsent envelope's documents and recipients.
 
-- **GET**: Always returns the same resource
-- **PUT**: Multiple identical requests produce the same result
-- **DELETE**: Deleting a deleted resource returns the same response
-
-**POST is not idempotent**: Creating the same envelope twice creates two separate envelopes.
+Creating the same envelope twice creates two separate envelopes. After a
+request timeout, reconcile the known envelope ID before retrying a mutation.
+Use the [envelope lifecycle](envelopes.md#envelope-states) to decide the next action.
 
 ## HTTPS Required
 
 All API requests must use HTTPS. Requests made over plain HTTP will fail:
 
 ```
-https://api.lexgo.cl/api/v1/envelopes  ✅
-http://api.lexgo.cl/api/v1/envelopes   ❌
+https://api.lexgo.cl/v1/envelopes  ✅
+http://api.lexgo.cl/v1/envelopes   ❌
 ```
 
 ## CORS
@@ -277,4 +287,3 @@ See [Error Codes](errors.md) for complete error documentation.
 - [Envelopes API](envelopes.md) - Create and manage envelopes
 - [Validations API](validations.md) - Implement 2FA email verification
 - [Webhooks API](webhooks.md) - Subscribe to real-time events
-- [Signing Reminders](reminders.md) - Schedule Client API signing reminders

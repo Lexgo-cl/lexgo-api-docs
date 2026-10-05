@@ -82,7 +82,6 @@ nav:
     - Validations (2FA): api/validations.md
     - Settings: api/settings.md
     - Webhooks: api/webhooks.md
-    - Signing Reminders (Client API): api/reminders.md
     - Error Codes: api/errors.md
   - Guides:
     - Sandbox vs Live: guides/sandbox.md
@@ -95,7 +94,6 @@ nav:
     - Create and Send Envelope: examples/create-envelope.md
     - Email Validation Flow: examples/email-validation-flow.md
     - Webhook Subscriptions: examples/webhook-subscriptions.md
-    - Schedule Signing Reminder: examples/schedule-signing-reminder.md
   - Changelog: changelog.md
 
 # Plugins

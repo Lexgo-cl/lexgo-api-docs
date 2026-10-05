@@ -7,9 +7,9 @@ Envelopes are the core resource in LexgoSign. An envelope contains documents and
 An envelope represents a signature request with one or more documents and recipients. Envelopes progress through several states:
 
 ```
-CREATED → IN_PROGRESS → SUCCESS
-   ↓
- VOIDED
+CREATED → SENDING → IN_PROGRESS → SUCCESS
+             ↓           ↓
+           ERROR       VOIDED
 ```
 
 ### Envelope States
@@ -17,6 +17,8 @@ CREATED → IN_PROGRESS → SUCCESS
 | State | Description |
 |-------|-------------|
 | `CREATED` | Envelope created but not sent to recipients |
+| `SENDING` | Send accepted; asynchronous processing underway |
+| `ERROR` | Validation or processing failure; inspect errors |
 | `IN_PROGRESS` | Envelope sent, awaiting signatures |
 | `SUCCESS` | All recipients have signed |
 | `VOIDED` | Envelope cancelled before completion |
@@ -25,13 +27,16 @@ CREATED → IN_PROGRESS → SUCCESS
 
 ### Create Envelope
 
-Create a new envelope with documents and recipients.
+Create a new envelope with documents and recipients. Valid creation returns HTTP
+200. Synchronous validation failures return HTTP 422 with the same envelope
+response, including its ID, `status: ERROR`, `errors`, and `request_id`.
+Keep that ID and correct the envelope with `PUT /v1/envelopes/:id` before sending.
 
-**Endpoint:** `POST /api/v1/envelopes`
+**Endpoint:** `POST /v1/envelopes`
 
 === "Request"
     ```http
-    POST /api/v1/envelopes HTTP/1.1
+    POST /v1/envelopes HTTP/1.1
     Host: api.lexgo.cl
     Authorization: YOUR_API_KEY
     Content-Type: multipart/form-data
@@ -42,6 +47,9 @@ Create a new envelope with documents and recipients.
     recipients[0][name]=John Doe
     recipients[0][email]=john.doe@example.com
     recipients[0][order]=1
+    placements[0][document_key]=0
+    placements[0][recipient_key]=0
+    placements[0][type]=SIGNATURE
     ```
 
 === "Response (200 OK)"
@@ -52,13 +60,13 @@ Create a new envelope with documents and recipients.
         "name": "Employment Contract - John Doe",
         "status": "CREATED",
         "created_at": "2024-01-15T10:30:00Z",
-        "envelope_signers": [
+        "recipients": [
           {
             "id": "signer-001",
             "name": "John Doe",
             "email": "john.doe@example.com",
             "order": 1,
-            "status": "PENDING"
+            "status": "CREATED"
           }
         ]
       },
@@ -66,17 +74,35 @@ Create a new envelope with documents and recipients.
     }
     ```
 
+=== "Response (422 Unprocessable Content)"
+    ```json
+    {
+      "envelope": {
+        "id": "abc-123-def-456",
+        "name": "Employment Contract - John Doe",
+        "status": "ERROR",
+        "errors": ["There are no signature placements that relate recipients to their respective documents."],
+        "warnings": []
+      },
+      "request_id": "req-abc123"
+    }
+    ```
+
+A 422 response can still contain a persisted envelope. Correct that envelope using
+its ID rather than retrying `POST`, which creates another envelope. Fetch/update
+can still return HTTP 200 with `status: ERROR`; inspect the validation fields.
+
 **Request Parameters:**
 
 !!! note "Parameter Format"
-    This API uses **multipart/form-data** with bracket notation for nested parameters. You can use numeric indices like `recipients[0]` or custom keys like `recipients[john]`.
+    This API accepts JSON or **multipart/form-data** with bracket notation for nested parameters. You can use numeric indices like `recipients[0]` or custom keys like `recipients[john]`.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | No | Envelope name/title (defaults to first document name) |
 | `documents[key][...]` | object | Yes | Document parameters (see below) |
 | `recipients[key][...]` | object | Yes | Recipient parameters (see below) |
-| `placements[index][...]` | object | No | Placement parameters (see below) |
+| `placements[index][...]` | object | Yes | Placement parameters (see below) |
 | `settings[...]` | object | No | Override default settings (see [Settings API](settings.md)) |
 
 **Document Parameters:**
@@ -105,9 +131,9 @@ Use `recipients[key][field]` where `key` can be a numeric index or custom identi
 | `recipients[key][rep_id]` | string | No | Legal representative ID (company name) |
 | `recipients[key][rep_label]` | string | No | Label for rep_id field (defaults to "Rep.") |
 
-**Placement Parameters (Optional):**
+### Placement Parameters (Required)
 
-Placements define where signature fields appear on documents. If not provided, recipients can sign anywhere (extra pages added at the end).
+Placements associate each recipient with a document and action. At least one placement is required, every recipient must have one, and each original document must have one. Omitting the entire collection is a validation error. A SIGNATURE placement without coordinates/token uses an extra signature page; it does not remove the placement requirement.
 
 Use `placements[index][field]` where `index` is a numeric index (0, 1, 2...).
 
@@ -115,20 +141,20 @@ Use `placements[index][field]` where `index` is a numeric index (0, 1, 2...).
 |-------|------|----------|-------------|
 | `placements[index][document_key]` | string | Yes | Document key from `documents[key]` |
 | `placements[index][recipient_key]` | string | Yes | Recipient key from `recipients[key]` |
-| `placements[index][type]` | string | No | Field type: `SIGNATURE` (default), `APPROVAL`, `WITNESS` |
+| `placements[index][type]` | string | No | Field type: `SIGNATURE` (default), `APPROVER`, `WITNESS` |
 | `placements[index][order]` | integer | No | Display order (defaults to index) |
-| `placements[index][coordinates][top]` | decimal | No* | Y-coordinate from top of page (pixels) |
-| `placements[index][coordinates][left]` | decimal | No* | X-coordinate from left of page (pixels) |
+| `placements[index][coordinates][top]` | decimal | No* | Distance from top of PDF page (PDF coordinate units) |
+| `placements[index][coordinates][left]` | decimal | No* | Distance from left of PDF page (PDF coordinate units) |
 | `placements[index][coordinates][page]` | integer | No* | Page number (0-indexed, 0 = first page) |
 | `placements[index][token]` | string | No* | Token to position signature (alternative to coordinates) |
 
 !!! note "Positioning"
-    You must provide **either** coordinates (top/left/page) **or** a token. If neither is provided, signatures will be added on extra pages at the end.
+    For SIGNATURE placements, coordinates (top/left/page) or a token position the signature. If neither is provided, signatures are added on extra pages. APPROVER and WITNESS placements must omit both coordinates and token. ATTACHMENT documents cannot have SIGNATURE placements. Do not mix placement types for the same document/recipient pair; at most one APPROVER or WITNESS is allowed for that pair.
 
 **Example with Placements:**
 
 ```http
-POST /api/v1/envelopes HTTP/1.1
+POST /v1/envelopes HTTP/1.1
 Host: api.lexgo.cl
 Authorization: YOUR_API_KEY
 Content-Type: multipart/form-data
@@ -164,11 +190,11 @@ placements[0][token]={custom_signature_token}
 
 Retrieve details of a specific envelope.
 
-**Endpoint:** `GET /api/v1/envelopes/:id`
+**Endpoint:** `GET /v1/envelopes/:id`
 
 === "Request"
     ```bash
-    curl https://api.lexgo.cl/api/v1/envelopes/abc-123-def-456 \
+    curl https://api.lexgo.cl/v1/envelopes/abc-123-def-456 \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -181,13 +207,13 @@ Retrieve details of a specific envelope.
         "status": "IN_PROGRESS",
         "created_at": "2024-01-15T10:30:00Z",
         "sent_at": "2024-01-15T10:35:00Z",
-        "envelope_signers": [
+        "recipients": [
           {
             "id": "signer-001",
             "name": "John Doe",
             "email": "john.doe@example.com",
             "order": 1,
-            "status": "SIGNED",
+            "status": "SIGNED_ALL",
             "signed_at": "2024-01-15T11:00:00Z"
           }
         ]
@@ -210,11 +236,11 @@ Retrieve details of a specific envelope.
 |-------|------|-------------|
 | `id` | string | Unique envelope identifier |
 | `name` | string | Envelope name |
-| `status` | string | Current status (CREATED, IN_PROGRESS, SUCCESS, VOIDED) |
+| `status` | string | Current lifecycle status, including CREATED, SENDING, IN_PROGRESS, SUCCESS, VOIDED, ERROR |
 | `created_at` | datetime | When envelope was created |
 | `sent_at` | datetime | When envelope was sent to recipients |
 | `completed_at` | datetime | When all signatures completed |
-| `envelope_signers` | array | List of recipients with their status |
+| `recipients` | array | List of recipients with their status |
 
 ---
 
@@ -222,7 +248,7 @@ Retrieve details of a specific envelope.
 
 Update an existing envelope before it's sent to recipients.
 
-**Endpoint:** `PUT /api/v1/envelopes/:id`
+**Endpoint:** `PUT /v1/envelopes/:id`
 
 !!! info "Update Restrictions"
     Envelopes can only be updated while in `CREATED` or `ERROR` status. Once sent (`IN_PROGRESS`), updates are no longer allowed.
@@ -232,7 +258,7 @@ Update an existing envelope before it's sent to recipients.
 
 === "Request"
     ```http
-    PUT /api/v1/envelopes/abc-123 HTTP/1.1
+    PUT /v1/envelopes/abc-123 HTTP/1.1
     Host: api.lexgo.cl
     Authorization: YOUR_API_KEY
     Content-Type: multipart/form-data
@@ -315,40 +341,35 @@ All parameters are optional. Only include the components you want to update.
 
 ### Send Envelope
 
-Send the envelope to recipients for signing.
+Queue asynchronous envelope processing.
 
-**Endpoint:** `POST /api/v1/envelopes/:id/send_invitation`
+**Endpoint:** `PUT /v1/envelopes/:id/send`
 
-!!! warning "One-Time Operation"
-    An envelope can only be sent once. After sending, the envelope transitions from `CREATED` to `IN_PROGRESS`.
+The envelope must be `CREATED` and have no validation errors. No body is
+required. Sending returns immediately; it does not prove delivery or completion.
 
-=== "Request"
-    ```bash
-    curl -X POST https://api.lexgo.cl/api/v1/envelopes/abc-123/send_invitation \
-      -H "Authorization: YOUR_API_KEY"
-    ```
+```bash
+curl -X PUT https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID/send \
+  -H "Authorization: YOUR_API_KEY"
+```
 
-=== "Response (200 OK)"
-    ```json
-    {
-      "success": true,
-      "request_id": "req-jkl012"
-    }
-    ```
+**HTTP 202 Accepted** (abridged):
 
-=== "Response (405 Method Not Allowed)"
-    ```json
-    {
-      "error": "Envelope not in CREATED status",
-      "request_id": "req-mno345"
-    }
-    ```
+```json
+{
+  "success": true,
+  "envelope": {"id": "envelope-id", "status": "SENDING", "errors": [], "warnings": []},
+  "message": "Envelope is being processed. Use webhooks or poll for status updates.",
+  "request_id": "request-id"
+}
+```
 
-**Behavior:**
-- Sends invitation emails to all recipients
-- Changes envelope status from `CREATED` to `IN_PROGRESS`
-- Generates unique access tokens for each recipient
-- Returns immediately (email sending happens asynchronously)
+Processing prepares documents and invitations asynchronously. If invitation
+email is disabled, signing links are generated without mailing recipients.
+Observe subsequent state through webhooks and reconcile with GET. A 405 with
+`error: "Envelope not in CREATED status"` can mean the envelope was already
+sent **or** has validation errors; retrieve it and inspect `errors`.
+A missing envelope returns 404. Do not blindly retry after a network timeout.
 
 ---
 
@@ -356,14 +377,14 @@ Send the envelope to recipients for signing.
 
 Cancel an envelope before completion.
 
-**Endpoint:** `PUT /api/v1/envelopes/:id/void`
+**Endpoint:** `PUT /v1/envelopes/:id/void`
 
 !!! warning "Irreversible"
     Voiding an envelope cannot be undone. Recipients will no longer be able to access or sign the documents.
 
 === "Request"
     ```bash
-    curl -X PUT https://api.lexgo.cl/api/v1/envelopes/abc-123/void \
+    curl -X PUT https://api.lexgo.cl/v1/envelopes/abc-123/void \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -398,14 +419,14 @@ Cancel an envelope before completion.
 
 Retrieve the evidence sheet URL for a completed envelope.
 
-**Endpoint:** `GET /api/v1/envelopes/:id/evidence`
+**Endpoint:** `GET /v1/envelopes/:id/evidence`
 
 !!! success "Optimized Performance"
     This endpoint uses intelligent async caching for **20-50x faster** response times on subsequent requests.
 
 === "Request"
     ```bash
-    curl https://api.lexgo.cl/api/v1/envelopes/abc-123/evidence \
+    curl https://api.lexgo.cl/v1/envelopes/abc-123/evidence \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -441,6 +462,8 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
 
 ## Code Examples
 
+Check HTTP status and `envelope.errors` after create/update. Create validation failures return HTTP 422; updates can still return HTTP 200 with an invalid envelope. After send, track `SENDING` through processing; `success: true` means accepted, not signed.
+
 ### Complete Workflow
 
 === "Python"
@@ -449,7 +472,7 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     import base64
     import time
 
-    API_BASE = "https://api.lexgo.cl/api/v1"
+    API_BASE = "https://api.lexgo.cl/v1"
     API_KEY = "your_api_key_here"
     headers = {
         "Authorization": API_KEY
@@ -466,7 +489,10 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
         "documents[0][name]": "employment-contract.pdf",
         "recipients[0][name]": "John Doe",
         "recipients[0][email]": "john.doe@example.com",
-        "recipients[0][order]": "1"
+        "recipients[0][order]": "1",
+        "placements[0][document_key]": "0",
+        "placements[0][recipient_key]": "0",
+        "placements[0][type]": "SIGNATURE"
     }
 
     create_response = requests.post(
@@ -480,13 +506,13 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     print(f"✓ Created envelope: {envelope_id}")
 
     # 2. Send to recipients
-    send_response = requests.post(
-        f"{API_BASE}/envelopes/{envelope_id}/send_invitation",
+    send_response = requests.put(
+        f"{API_BASE}/envelopes/{envelope_id}/send",
         headers=headers
     )
 
     if send_response.json()["success"]:
-        print("✓ Envelope sent to recipients")
+        print("✓ Envelope send accepted; reconcile status")
 
     # 3. Check status
     status_response = requests.get(
@@ -498,8 +524,8 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     print(f"✓ Current status: {status}")
 
     # 4. Wait for completion and get evidence (optional)
-    # In production, use webhooks instead of polling
-    while status not in ["SUCCESS", "VOIDED"]:
+    # Combine webhooks with periodic polling/reconciliation
+    while status not in ["SUCCESS", "VOIDED", "ERROR"]:
         time.sleep(30)  # Poll every 30 seconds
         status_response = requests.get(
             f"{API_BASE}/envelopes/{envelope_id}",
@@ -523,7 +549,7 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     const FormData = require('form-data');
     const fs = require('fs');
 
-    const API_BASE = 'https://api.lexgo.cl/api/v1';
+    const API_BASE = 'https://api.lexgo.cl/v1';
     const API_KEY = 'your_api_key_here';
 
     async function createAndSendEnvelope() {
@@ -539,6 +565,9 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
       formData.append('recipients[0][name]', 'John Doe');
       formData.append('recipients[0][email]', 'john.doe@example.com');
       formData.append('recipients[0][order]', '1');
+      formData.append('placements[0][document_key]', '0');
+      formData.append('placements[0][recipient_key]', '0');
+      formData.append('placements[0][type]', 'SIGNATURE');
 
       const createResponse = await fetch(`${API_BASE}/envelopes`, {
         method: 'POST',
@@ -554,9 +583,9 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
 
       // 2. Send to recipients
       const sendResponse = await fetch(
-        `${API_BASE}/envelopes/${envelopeId}/send_invitation`,
+        `${API_BASE}/envelopes/${envelopeId}/send`,
         {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Authorization': API_KEY
           }
@@ -565,7 +594,7 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
 
       const { success } = await sendResponse.json();
       if (success) {
-        console.log('✓ Envelope sent to recipients');
+        console.log('✓ Envelope send accepted; reconcile status');
       }
 
       return envelopeId;
@@ -579,7 +608,7 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     require 'net/http'
     require 'base64'
 
-    API_BASE = 'https://api.lexgo.cl/api/v1'
+    API_BASE = 'https://api.lexgo.cl/v1'
     API_KEY = 'your_api_key_here'
 
     # 1. Create envelope
@@ -592,11 +621,14 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
       ['documents[0][name]', 'employment-contract.pdf'],
       ['recipients[0][name]', 'John Doe'],
       ['recipients[0][email]', 'john.doe@example.com'],
-      ['recipients[0][order]', '1']
+      ['recipients[0][order]', '1'],
+      ['placements[0][document_key]', '0'],
+      ['placements[0][recipient_key]', '0'],
+      ['placements[0][type]', 'SIGNATURE']
     ]
 
     uri = URI("#{API_BASE}/envelopes")
-    request = Net::HTTP::Post.new(uri)
+    request = Net::HTTP::Put.new(uri)
     request['Authorization'] = API_KEY
     request.set_form(form_data, 'multipart/form-data')
 
@@ -609,8 +641,8 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     puts "✓ Created envelope: #{envelope_id}"
 
     # 2. Send to recipients
-    uri = URI("#{API_BASE}/envelopes/#{envelope_id}/send_invitation")
-    request = Net::HTTP::Post.new(uri)
+    uri = URI("#{API_BASE}/envelopes/#{envelope_id}/send")
+    request = Net::HTTP::Put.new(uri)
     request['Authorization'] = API_KEY
 
     response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
@@ -618,31 +650,19 @@ See the [Evidence Sheet Guide](../guides/evidence-sheet.md) for detailed documen
     end
 
     result = JSON.parse(response.body)
-    puts '✓ Envelope sent to recipients' if result['success']
+    puts '✓ Envelope send accepted; reconcile status' if result['success']
     ```
 
 ---
 
 ## Best Practices
 
-### 1. Use Webhooks for Status Updates
+### 1. Combine Webhooks with Reconciliation
 
-Don't poll the API to check envelope status. Use webhooks instead:
-
-```python
-# BAD: Polling
-while True:
-    response = requests.get(f"{API_BASE}/envelopes/{envelope_id}")
-    if response.json()["envelope"]["status"] == "SUCCESS":
-        break
-    time.sleep(30)
-
-# GOOD: Webhooks
-# Set up webhook to receive envelope.signed event
-# Your endpoint receives notification when envelope completes
-```
-
-See [Webhook Integration Guide](../guides/webhook-integration.md).
+Use [webhooks](../guides/webhook-integration.md) for prompt updates and
+periodically retrieve stored envelope IDs to recover from missed or delayed
+notifications. Webhooks have bounded best-effort retries. Deduplicate delivery
+IDs and make downstream business operations idempotent.
 
 ### 2. Validate Files Before Upload
 
@@ -676,6 +696,8 @@ try:
     response = requests.post(f"{API_BASE}/envelopes", headers=headers, json=data)
     response.raise_for_status()
     envelope = response.json()["envelope"]
+    if envelope.get("errors") or envelope["status"] == "ERROR":
+        print(f"Envelope validation failed: {envelope.get('errors')}")
 except requests.HTTPError as e:
     if e.response.status_code == 422:
         # Validation error
@@ -708,7 +730,7 @@ db.envelopes.insert({
 
 ### Error: "Envelope not in CREATED status"
 
-**Cause:** Trying to send an envelope that's already been sent.
+**Cause:** The envelope was already sent or has validation errors. Retrieve it and inspect status/errors before retrying.
 
 **Solution:** Check envelope status before sending:
 
@@ -716,9 +738,9 @@ db.envelopes.insert({
 status_response = requests.get(f"{API_BASE}/envelopes/{envelope_id}")
 status = status_response.json()["envelope"]["status"]
 
-if status == "CREATED":
+if status == "CREATED" and not status_response.json()["envelope"].get("errors"):
     # Safe to send
-    send_response = requests.post(f"{API_BASE}/envelopes/{envelope_id}/send_invitation")
+    send_response = requests.put(f"{API_BASE}/envelopes/{envelope_id}/send")
 ```
 
 ### Error: "Invalid PDF content"

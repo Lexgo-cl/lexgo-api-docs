@@ -8,7 +8,7 @@ Complete example implementing email validation (2FA).
 import requests
 
 API_KEY = 'your_api_key_here'
-BASE_URL = 'https://api.lexgo.cl/api/v1'
+BASE_URL = 'https://api.lexgo.cl/v1'
 ENVELOPE_ID = 'your_envelope_id'
 RECIPIENT_ID = 'your_recipient_id'
 

@@ -19,6 +19,7 @@ Subscribe to events and receive HTTP POST requests to your server when:
 
 | Event | Description |
 |-------|-------------|
+| `envelope.sending_failed` | Asynchronous send failed; inspect envelope state/errors |
 | `envelope.in_progress` | Envelope sent to recipients |
 | `envelope.success` | All recipients signed |
 | `envelope.voided` | Envelope cancelled |
@@ -55,13 +56,13 @@ Subscribe to events and receive HTTP POST requests to your server when:
 ### Endpoint
 
 ```http
-POST /api/v1/webhooks
+POST /v1/webhooks
 ```
 
 ### Request
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/webhooks \
+curl -X POST https://api.lexgo.cl/v1/webhooks \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -279,14 +280,14 @@ envelope information: documents, recipients, signature placements, and all confi
 ## List Webhooks
 
 ```bash
-curl https://api.lexgo.cl/api/v1/webhooks \
+curl https://api.lexgo.cl/v1/webhooks \
   -H "Authorization: YOUR_API_KEY"
 ```
 
 ## Update Webhook
 
 ```bash
-curl -X PUT https://api.lexgo.cl/api/v1/webhooks/{webhook_id} \
+curl -X PUT https://api.lexgo.cl/v1/webhooks/{webhook_id} \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -297,21 +298,32 @@ curl -X PUT https://api.lexgo.cl/api/v1/webhooks/{webhook_id} \
 ## Delete Webhook
 
 ```bash
-curl -X DELETE https://api.lexgo.cl/api/v1/webhooks/{webhook_id} \
+curl -X DELETE https://api.lexgo.cl/v1/webhooks/{webhook_id} \
   -H "Authorization: YOUR_API_KEY"
 ```
 
-## Retry Logic
+## Delivery and Retries
 
-Failed webhook deliveries are retried:
+Webhooks are best-effort asynchronous notifications. A failed or timed-out
+delivery has up to three scheduled retries after approximately 5, 10, and
+20 seconds (four total attempts). Requests use a 5-second response timeout
+and a 2-second connection timeout.
 
-- **3 retry attempts**
-- **5-second delay** between attempts
-- **Async delivery** via Sidekiq
+The payload `id` identifies one queued delivery and remains stable across
+its retries. Store processed IDs to avoid repeating side effects. Separate
+events or subscriptions may have separate IDs, even for the same envelope.
+The payload contains the resource state at delivery time; it is not an
+immutable event snapshot.
+
+Delivery is not exactly once and is not guaranteed. Notifications can be
+duplicated, delayed, or missed, and arrival order must not define your
+business state. Use `GET /v1/envelopes/:id` to reconcile stored envelope IDs,
+especially after timeouts, retry exhaustion, or missing expected events.
+See [Webhook Integration](../guides/webhook-integration.md).
 
 ## Best Practices
 
-1. **Verify signatures**: Validate webhook authenticity
+1. **Authenticate**: If configured, compare the Authorization header to your shared secret; the payload has no documented cryptographic signature
 2. **Respond quickly**: Return 200 status immediately
 3. **Process async**: Handle payload in background job
 4. **Log events**: Track all webhook deliveries

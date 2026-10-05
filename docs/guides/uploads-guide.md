@@ -11,7 +11,7 @@ Use file uploads when your PDF files are larger than 1MB. For smaller files, use
 ### Step 1: Create Envelope (No Documents)
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/envelopes \
+curl -X POST https://api.lexgo.cl/v1/envelopes \
   -H "Authorization: YOUR_API_KEY" \
   -F "name=Contract - John Doe" \
   -F "recipients[0][name]=John Doe" \
@@ -19,12 +19,12 @@ curl -X POST https://api.lexgo.cl/api/v1/envelopes \
   -F "recipients[0][order]=1"
 ```
 
-Save the `envelope.id` from the response.
+Save the `envelope.id` from the response. During upload preparation, creation returns HTTP 422 with `status: ERROR` until its document and required placements exist. The response still includes the persisted envelope ID; keep it to upload documents and repair placements rather than creating another envelope. Inspect errors before sending.
 
 ### Step 2: Request Upload URL
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID/uploads \
+curl -X POST https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID/uploads \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -49,7 +49,7 @@ curl -X PUT "UPLOAD_URL" \
 **Option A: Poll for completion**
 
 ```bash
-curl https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID/uploads/UPLOAD_ID \
+curl https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID/uploads/UPLOAD_ID \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -60,7 +60,7 @@ Check `upload.status` in response. Repeat every 2 seconds until `COMPLETED`.
 Subscribe to `envelope.file_uploaded` event:
 
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/webhooks \
+curl -X POST https://api.lexgo.cl/v1/webhooks \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -69,12 +69,24 @@ curl -X POST https://api.lexgo.cl/api/v1/webhooks \
   }'
 ```
 
-Your webhook will receive notification when file is ready (no polling needed).
+Your webhook will receive notification when file is ready (use polling to reconcile missed notifications).
 
-### Step 5: Verify Documents Attached
+### Step 5: Assign Placement and Verify Documents
+
+Once processing completes, associate the uploaded document (order `0`) with
+the recipient. The upload alone does not create a valid placement.
 
 ```bash
-curl https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID \
+curl -X PUT https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID \
+  -H "Authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"placements":{"signature":{"document_key":"0","recipient_key":"0","type":"SIGNATURE"}}}'
+```
+
+### Verify Documents Attached
+
+```bash
+curl https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -85,8 +97,10 @@ Check the response:
 
 ### Step 6: Send Envelope
 
+The PUT returns HTTP 202/SENDING. Track webhooks and reconcile with GET until completion or ERROR.
+
 ```bash
-curl -X POST https://api.lexgo.cl/api/v1/envelopes/ENVELOPE_ID/send_invitation \
+curl -X PUT https://api.lexgo.cl/v1/envelopes/ENVELOPE_ID/send \
   -H "Authorization: YOUR_API_KEY"
 ```
 
@@ -101,7 +115,7 @@ Save this as `upload_contract.sh`:
 set -e
 
 # Configuration
-API_BASE="https://api.lexgo.cl/api/v1"
+API_BASE="https://api.lexgo.cl/v1"
 API_KEY="YOUR_API_KEY"
 PDF_FILE="$1"
 
@@ -198,7 +212,11 @@ if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
 fi
 
 echo ""
-echo "=== Step 5: Verify Envelope ==="
+echo "=== Step 5: Assign Placement and Verify Envelope ==="
+curl -s -X PUT "${API_BASE}/envelopes/${ENVELOPE_ID}" \
+  -H "Authorization: ${API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{"placements":{"signature":{"document_key":"0","recipient_key":"0","type":"SIGNATURE"}}}' > /dev/null
 ENVELOPE_JSON=$(curl -s "${API_BASE}/envelopes/${ENVELOPE_ID}" \
   -H "Authorization: ${API_KEY}")
 
@@ -220,12 +238,12 @@ echo "✓ Envelope verified: $DOC_COUNT document(s), no errors"
 
 echo ""
 echo "=== Step 6: Send Envelope ==="
-SEND_JSON=$(curl -s -X POST "${API_BASE}/envelopes/${ENVELOPE_ID}/send_invitation" \
+SEND_JSON=$(curl -s -X PUT "${API_BASE}/envelopes/${ENVELOPE_ID}/send" \
   -H "Authorization: ${API_KEY}")
 
 SUCCESS=$(echo "$SEND_JSON" | jq -r '.success')
 if [ "$SUCCESS" = "true" ]; then
-  echo "✓ Envelope sent!"
+  echo "✓ Envelope send accepted; reconcile status"
   echo ""
   echo "Done! Envelope ID: $ENVELOPE_ID"
 else
@@ -255,7 +273,7 @@ import time
 import sys
 import os
 
-API_BASE = "https://api.lexgo.cl/api/v1"
+API_BASE = "https://api.lexgo.cl/v1"
 API_KEY = "YOUR_API_KEY"
 
 def create_envelope():
@@ -270,7 +288,9 @@ def create_envelope():
             "recipients[0][order]": "1"
         }
     )
-    response.raise_for_status()
+    # Upload preparation intentionally creates an incomplete envelope (HTTP 422).
+    if response.status_code not in (200, 422):
+        response.raise_for_status()
     envelope_id = response.json()["envelope"]["id"]
     print(f"✓ Created envelope: {envelope_id}")
     return envelope_id
@@ -336,6 +356,12 @@ def wait_for_processing(envelope_id, upload_id):
     return False
 
 def verify_envelope(envelope_id):
+    update = requests.put(
+        f"{API_BASE}/envelopes/{envelope_id}",
+        headers={"Authorization": API_KEY},
+        json={"placements":{"signature":{"document_key":"0","recipient_key":"0","type":"SIGNATURE"}}}
+    )
+    update.raise_for_status()
     print("\n=== Step 5: Verify Envelope ===")
     response = requests.get(
         f"{API_BASE}/envelopes/{envelope_id}",
@@ -360,14 +386,14 @@ def verify_envelope(envelope_id):
 
 def send_envelope(envelope_id):
     print("\n=== Step 6: Send Envelope ===")
-    response = requests.post(
-        f"{API_BASE}/envelopes/{envelope_id}/send_invitation",
+    response = requests.put(
+        f"{API_BASE}/envelopes/{envelope_id}/send",
         headers={"Authorization": API_KEY}
     )
     response.raise_for_status()
 
     if response.json()["success"]:
-        print("✓ Envelope sent!")
+        print("✓ Envelope send accepted; reconcile status")
         return True
     else:
         print("✗ Failed to send envelope")
@@ -432,7 +458,7 @@ python upload_contract.py contract.pdf
 
 ```bash
 # Get error details
-curl https://api.lexgo.cl/api/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
+curl https://api.lexgo.cl/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
   -H "Authorization: YOUR_API_KEY" | jq '.upload.error_message'
 
 # Common errors:
@@ -447,7 +473,7 @@ curl https://api.lexgo.cl/api/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
 
 ```bash
 # Check existing uploads
-curl https://api.lexgo.cl/api/v1/envelopes/$ENVELOPE_ID/uploads \
+curl https://api.lexgo.cl/v1/envelopes/$ENVELOPE_ID/uploads \
   -H "Authorization: YOUR_API_KEY" | jq '.uploads[] | select(.order == 0)'
 
 # Wait for completion or use different order number

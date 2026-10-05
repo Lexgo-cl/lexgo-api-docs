@@ -9,7 +9,7 @@ Use a **sandbox** key while integrating. Switch to a **live** key when you need 
 Sandbox and live keys both call production API hosts:
 
 ```
-https://api.lexgo.cl/api/v1
+https://api.lexgo.cl/v1
 ```
 
 !!! note "Gateway path"
@@ -20,7 +20,7 @@ https://api.lexgo.cl/api/v1
     `https://sandbox-api.lexgo.cl` does **not** exist. Always use
     `https://api.lexgo.cl` and select sandbox or live via your API key.
 
-Confirm the stage of your key with `POST /api/v1/test` — the response includes
+Confirm the stage of your key with `POST /v1/test` — the response includes
 `"environment": "sandbox"` or `"environment": "live"`.
 
 ## Sandbox restrictions
@@ -31,7 +31,7 @@ Confirm the stage of your key with `POST /api/v1/test` — the response includes
 | Recipient emails | Only enterprise **team members** | Any valid email |
 | Document watermark | `NON-BINDING DOCUMENT` on every page | None |
 | Legal validity | Not legally binding | Legally binding |
-| `QUALIFIED_CHILE` signature type | Not allowed (use `INTERNATIONAL`) | Allowed |
+| `QUALIFIED_CHILE` signature type | Free FirmAki sandbox identity checks and signing | Allowed |
 | Usage / billing reports | Excluded | Included |
 
 ### Recipient email allowlist
@@ -77,3 +77,13 @@ Integrators almost always want a **sandbox key** on `api.lexgo.cl`, not staging.
 - [Authentication](../getting-started/authentication.md) — API keys and the `/test` endpoint
 - [Quick Start](../getting-started/quick-start.md) — first envelope
 - [Envelopes API](../api/envelopes.md) — create and send
+
+## Chilean advanced signatures in sandbox
+
+Use `QUALIFIED_CHILE` to exercise FirmAki's sandbox authentication and signing journey. This is provider test signing: documents retain the `NON-BINDING DOCUMENT` watermark, have no legal validity and are excluded from live billing. Recipients must remain active members of your enterprise team and use reachable email inboxes; FirmAki sends its own email verification code.
+
+Create/send the envelope with your sandbox key, open its signer link, and follow the provider's hosted identity checks. Use one of the published test RUTs (`44444444-4`, `55555555-5`, `88888888-8`, `99999999-9`) with Clave Única password `testing`. The requested and authenticated RUT must match. Use **Simular NFC**, answer each Buró question with its matching answer ID (1→1 through5→5), and select Khipu **DemoBank**, password `1234`, authorization `11-22-33`.
+
+Complete email verification, set your test certificate password, then return to Lexgo and sign through FirmAki. For repeatable sandbox tests, FirmAki's example certificate password is `Password123!`; it is test data and must never be used for a live certificate. Clave Única uses the separate published password `testing`. A completed test produces a watermarked PDF; a provider login or a delivered webhook alone does not mean the envelope is signed.
+
+See [FirmAki's sandbox test data](https://fear-docs.signapis.com/#section/6.-Pruebas-en-ambiente-de-Sandbox). Live keys continue through the live provider.

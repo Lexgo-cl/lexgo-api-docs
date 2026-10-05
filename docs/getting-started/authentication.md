@@ -29,7 +29,7 @@ Authorization: YOUR_API_KEY_HERE
 
 === "cURL"
     ```bash
-    curl https://api.lexgo.cl/api/v1/envelopes \
+    curl https://api.lexgo.cl/v1/settings \
       -H "Authorization: your_api_key_here" \
       -H "Content-Type: application/json"
     ```
@@ -44,7 +44,7 @@ Authorization: YOUR_API_KEY_HERE
     }
 
     response = requests.get(
-        'https://api.lexgo.cl/api/v1/envelopes',
+        'https://api.lexgo.cl/v1/settings',
         headers=headers
     )
     ```
@@ -58,7 +58,7 @@ Authorization: YOUR_API_KEY_HERE
         'Content-Type': 'application/json'
     };
 
-    fetch('https://api.lexgo.cl/api/v1/envelopes', { headers })
+    fetch('https://api.lexgo.cl/v1/settings', { headers })
         .then(res => res.json())
         .then(data => console.log(data));
     ```
@@ -68,7 +68,7 @@ Authorization: YOUR_API_KEY_HERE
     require 'net/http'
     require 'json'
 
-    uri = URI('https://api.lexgo.cl/api/v1/envelopes')
+    uri = URI('https://api.lexgo.cl/v1/settings')
     headers = {
       'Authorization' => 'your_api_key_here',
       'Content-Type' => 'application/json'
@@ -81,11 +81,11 @@ Authorization: YOUR_API_KEY_HERE
 
 After getting your API key, test it with the test endpoint:
 
-**Endpoint**: `POST /api/v1/test`
+**Endpoint**: `POST /v1/test`
 
 === "cURL"
     ```bash
-    curl -X POST https://api.lexgo.cl/api/v1/test \
+    curl -X POST https://api.lexgo.cl/v1/test \
       -H "Authorization: your_api_key_here" \
       -F "test_param=Sample value 123"
     ```
@@ -95,7 +95,7 @@ After getting your API key, test it with the test endpoint:
     import requests
 
     response = requests.post(
-        'https://api.lexgo.cl/api/v1/test',
+        'https://api.lexgo.cl/v1/test',
         headers={'Authorization': 'your_api_key_here'},
         data={'test_param': 'Sample value 123'}
     )
@@ -116,7 +116,7 @@ After getting your API key, test it with the test endpoint:
     const form = new FormData();
     form.append('test_param', 'Sample value 123');
 
-    fetch('https://api.lexgo.cl/api/v1/test', {
+    fetch('https://api.lexgo.cl/v1/test', {
       method: 'POST',
       headers: { 'Authorization': 'your_api_key_here' },
       body: form

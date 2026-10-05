@@ -7,16 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Envelope creation now returns HTTP 422 for synchronous validation failures, preserving the envelope ID and actionable `envelope.errors` for correction. Valid creation remains HTTP 200; asynchronous sending remains HTTP 202. Integrations preparing upload-first envelopes must retain the ID from the 422 response.
+- Stable webhook delivery IDs across scheduled retries, all three scheduled retries now execute, and asynchronous sending no longer enqueues the same in-progress notification twice. Delivery remains best effort; see [Webhook integration](guides/webhook-integration.md).
+- Corrected send method/path, placement requirements, signing types versus appearance styles, and HTTP versus envelope error handling.
+- Removed the canceled signing-reminder announcement and examples.
+
 ### Added
+- **Signature background image (watermark) scope**: `settings.signature.bg_image_scope` (`QUALIFIED_CHILE`/`INTERNATIONAL`/`ALL`, default `QUALIFIED_CHILE`; legacy `FEA`/`FES` aliases remain accepted) controls whether the `bg_image` watermark is composited behind the signature on the FEA (`QUALIFIED_CHILE`) path, the FES (`INTERNATIONAL`) path, or both. Per-envelope override and persistent API-key default, same precedence as other `signature` settings. No behavior change for existing integrations.
+  - Docs: [Signature Appearance Settings](api/settings.md#signature-background-image)
 - **Sandbox vs Live guide**: Documents sandbox as an API key stage on `api.lexgo.cl`
   (not a separate host), team-member recipient allowlist, watermark,
-  `QUALIFIED_CHILE` restriction, and how to add allowed emails in Equipos
+  the `QUALIFIED_CHILE` provider sandbox journey, and how to add allowed emails in Equipos
   - Docs: [Sandbox vs Live](guides/sandbox.md)
-- **Client API — Signing Reminders**: Schedule email reminders for signing documents
-  - `POST /api/client/documents/:id/reminders`
-  - OAuth (`client` scope) + `X-Enterprise-Id`; requires `contracts:write`
-  - Creates `Alerts::Alert` + `Alerts::Reminder`; delivery via `ReminderWorker`
-  - Docs: [Signing Reminders](api/reminders.md), [Example](examples/schedule-signing-reminder.md)
 
 ## [1.1.1] - 2025-11-10
 
@@ -31,8 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Email Validation (2FA)**: Two-factor authentication via email verification codes
-  - `POST /api/v1/envelopes/:envelope_id/recipients/:recipient_id/validations/send_code` - Send verification code
-  - `POST /api/v1/envelopes/:envelope_id/recipients/:recipient_id/validations/verify_code` - Verify code
+  - `POST /v1/envelopes/:envelope_id/recipients/:recipient_id/validations/send_code` - Send verification code
+  - `POST /v1/envelopes/:envelope_id/recipients/:recipient_id/validations/verify_code` - Verify code
 - **Validation Events**: Six new webhook events for email validation lifecycle
   - `recipient.validation_code_generated` - Code created
   - `recipient.validation_code_sent` - Email delivered
@@ -65,20 +68,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial API release
 - **Envelopes API**:
-  - `POST /api/v1/envelopes` - Create envelope
-  - `GET /api/v1/envelopes/:id` - Get envelope details
-  - `POST /api/v1/envelopes/:id/send_invitation` - Send invitation
-  - `PUT /api/v1/envelopes/:id/void` - Cancel envelope
-  - `GET /api/v1/envelopes/:id/evidence` - Get evidence sheet
+  - `POST /v1/envelopes` - Create envelope
+  - `GET /v1/envelopes/:id` - Get envelope details
+  - `PUT /v1/envelopes/:id/send` - Send invitation
+  - `PUT /v1/envelopes/:id/void` - Cancel envelope
+  - `GET /v1/envelopes/:id/evidence` - Get evidence sheet
 - **Settings API**:
-  - `GET /api/v1/settings` - Get configuration
-  - `PUT /api/v1/settings` - Update configuration
+  - `GET /v1/settings` - Get configuration
+  - `PUT /v1/settings` - Update configuration
 - **Webhooks API**:
-  - `GET /api/v1/webhooks` - List webhooks
-  - `POST /api/v1/webhooks` - Create webhook
-  - `GET /api/v1/webhooks/:id` - Get webhook
-  - `PUT /api/v1/webhooks/:id` - Update webhook
-  - `DELETE /api/v1/webhooks/:id` - Delete webhook
+  - `GET /v1/webhooks` - List webhooks
+  - `POST /v1/webhooks` - Create webhook
+  - `GET /v1/webhooks/:id` - Get webhook
+  - `PUT /v1/webhooks/:id` - Update webhook
+  - `DELETE /v1/webhooks/:id` - Delete webhook
 - **Webhook Events**:
   - Envelope events: `envelope.in_progress`, `envelope.success`, `envelope.voided`
   - Recipient events: `recipient.email_sent`, `recipient.email_received`, `recipient.email_opened`, `recipient.email_clicked`, `recipient.email_bounced`, `recipient.link_generated`, `recipient.in_progress`, `recipient.signed_all`, `recipient.rejected`

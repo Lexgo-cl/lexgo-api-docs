@@ -4,7 +4,7 @@ This page documents all possible error responses from the LexgoSign API.
 
 ## Error Response Format
 
-All error responses follow a consistent format:
+HTTP failures generally use the following format. Envelope validation is a separate response layer:
 
 ```json
 {
@@ -16,7 +16,22 @@ All error responses follow a consistent format:
 ## HTTP Status Codes
 
 ### 200 OK
-Request succeeded. Resource returned in response body.
+Creation returns HTTP 200 when the envelope is valid. Fetch/update can return
+an existing envelope with `status: ERROR` and nonempty `errors`; inspect
+`envelope.status`, `envelope.errors`, and `envelope.warnings` before sending.
+
+```json
+{"envelope":{"id":"envelope-id","status":"ERROR","errors":["Validation error"],"warnings":[]},"request_id":"request-id"}
+```
+
+### 202 Accepted
+
+`PUT /v1/envelopes/:id/send` queues asynchronous processing and returns an
+envelope with `status: SENDING`. It does not prove invitations were delivered
+or signing completed. Follow webhooks and reconcile with
+`GET /v1/envelopes/:id` for `IN_PROGRESS`, `SUCCESS`, `VOIDED`, or
+`ERROR`. Do not blindly retry create/send after a timeout; inspect the
+known envelope first.
 
 ### 401 Unauthorized
 
@@ -71,7 +86,24 @@ Request succeeded. Resource returned in response body.
 
 ### 422 Unprocessable Entity
 
-#### Validation Errors
+Creation validation failures return HTTP 422 with `envelope.id`,
+`status: ERROR`, and the existing actionable `envelope.errors` array.
+Keep the ID and repair the envelope with `PUT /v1/envelopes/:id` before sending.
+
+#### Envelope Creation Validation
+```json
+{
+  "envelope": {
+    "id": "envelope-id",
+    "status": "ERROR",
+    "errors": ["Validation error"],
+    "warnings": []
+  },
+  "request_id": "request-id"
+}
+```
+
+#### Verification Code
 ```json
 {
   "error": "Invalid verification code",
@@ -108,7 +140,7 @@ Request succeeded. Resource returned in response body.
 
 ## Error Handling Best Practices
 
-1. Always check HTTP status code
+1. Check HTTP status and the envelope lifecycle, errors, and warnings
 2. Log request_id for support tickets
 3. Implement exponential backoff for rate limits
 4. Show user-friendly error messages

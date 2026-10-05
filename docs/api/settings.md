@@ -21,7 +21,7 @@ Configure default settings for:
 
 Retrieve current configuration settings.
 
-**Endpoint:** `GET /api/v1/settings`
+**Endpoint:** `GET /v1/settings`
 
 ### Query Parameters
 
@@ -35,13 +35,13 @@ Retrieve current configuration settings.
 
 === "All Settings"
     ```bash
-    curl https://api.lexgo.cl/api/v1/settings \
+    curl https://api.lexgo.cl/v1/settings \
       -H "Authorization: YOUR_API_KEY"
     ```
 
 === "Filtered by Scope"
     ```bash
-    curl "https://api.lexgo.cl/api/v1/settings?scope=documents,emails,signature_flow" \
+    curl "https://api.lexgo.cl/v1/settings?scope=documents,emails,signature_flow" \
       -H "Authorization: YOUR_API_KEY"
     ```
 
@@ -59,14 +59,14 @@ Retrieve current configuration settings.
       "sender_email": "noreply@example.com"
     },
     "documents": {
-      "document_id_enabled": true,
+      "include_page_id": "TRUE",
       "custom_page_id": "Document ID:"
     },
     "emails": {
-      "envelope_invitation": true,
-      "envelope_voided": false,
-      "envelope_rejected": false,
-      "envelope_signed": true
+      "envelope_invitation": "TRUE",
+      "envelope_voided": "FALSE",
+      "envelope_rejected": "FALSE",
+      "envelope_signed": "TRUE"
     },
     "localization": {
       "en": {
@@ -82,7 +82,7 @@ Retrieve current configuration settings.
       }
     },
     "signature": {
-      "type": "SIMPLE",
+      "type": "INTERNATIONAL",
       "style": "SIMPLE",
       "bg_image": "https://example.com/signature-bg.png"
     },
@@ -95,7 +95,7 @@ Retrieve current configuration settings.
     },
     "validations": {
       "email": {
-        "enabled": false,
+        "enabled": "FALSE",
         "order": 0
       }
     }
@@ -110,12 +110,12 @@ Retrieve current configuration settings.
 
 Update default configuration settings.
 
-**Endpoint:** `PUT /api/v1/settings`
+**Endpoint:** `PUT /v1/settings`
 
 ### Request
 
 ```bash
-curl -X PUT https://api.lexgo.cl/api/v1/settings \
+curl -X PUT https://api.lexgo.cl/v1/settings \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -186,7 +186,7 @@ Configure document ID placement and custom text.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `documents[document_id_enabled]` | string | Write Document ID on every page. Values: `TRUE` (default), `FALSE` |
+| `documents[include_page_id]` | string | Write Document ID on every page. Values: `TRUE` (default), `FALSE` |
 | `documents[custom_page_id]` | string | Text that precedes the Document ID. Defaults to `"Lexgo Sign ID:"` |
 
 **Example:**
@@ -194,7 +194,7 @@ Configure document ID placement and custom text.
 ```json
 {
   "documents": {
-    "document_id_enabled": "TRUE",
+    "include_page_id": "TRUE",
     "custom_page_id": "CVE:"
   }
 }
@@ -296,9 +296,10 @@ Configure digital signature certificate type and appearance.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `signature[type]` | string | Certificate type: `SIMPLE` (default), `FULL`, `QUALIFIED_CHILE` |
-| `signature[style]` | string | Signature appearance: `SIMPLE` (default), `FULL` |
-| `signature[bg_image]` | string | Background image URL for signature certificate (100x50 pixels) |
+| `signature[type]` | string | Signing type: `INTERNATIONAL` (default, FES) or `QUALIFIED_CHILE` (FEA) |
+| `signature[style]` | string | Signature appearance: `SIMPLE` (default), `SIMPLE_QR`, `FULL` |
+| `signature[bg_image]` | string | Signature-area image: `DEFAULT` (Lexgo logo), `NONE` (disabled), or a custom image URL |
+| `signature[bg_image_scope]` | string | `QUALIFIED_CHILE` (default), `INTERNATIONAL`, `ALL`; legacy `FEA`/`FES` aliases |
 
 **Example:**
 
@@ -312,10 +313,60 @@ Configure digital signature certificate type and appearance.
 }
 ```
 
-**Certificate Types**:
-- `SIMPLE`: Basic signature certificate
-- `FULL`: Detailed certificate with full audit trail
-- `QUALIFIED_CHILE`: Qualified digital signature (Chilean Law 19.799)
+**Signing type and appearance are independent.** `signature.type` chooses
+International (FES) or Qualified Chile (FEA) signing. `signature.style` changes
+the visible signature layout; `SIMPLE`, `SIMPLE_QR`, and `FULL` are styles,
+not signing types.
+
+#### Signature Background Image
+
+`signature.bg_image_scope` chooses which signing type draws the background.
+It does not change the signing type, certificate, or legal status.
+
+| Scope | Qualified Chile (`QUALIFIED_CHILE`, FEA) | International (`INTERNATIONAL`, FES) |
+|-------|-------------------------------------------|---------------------------------------|
+| `QUALIFIED_CHILE` (default) | Background enabled | Background disabled |
+| `INTERNATIONAL` | Background disabled | Background enabled |
+| `ALL` | Background enabled | Background enabled |
+
+Legacy values `FEA` and `FES` remain accepted aliases for
+`QUALIFIED_CHILE` and `INTERNATIONAL`, respectively. Use the canonical
+values in new integrations. Unrecognized values are retained in the settings response, but their effective
+rendering scope falls back to `QUALIFIED_CHILE`. Accepted legacy aliases are
+normalized to canonical values in settings readback and new updates.
+
+`bg_image: "NONE"` disables the signature background for every scope.
+`DEFAULT` uses the Lexgo logo; a custom image URL selects that image.
+The image is composited behind the signature with background opacity.
+
+**Precedence:** a nonblank per-envelope value under `settings.signature`
+overrides that field's API-key default. An omitted field uses the API-key
+default, then the built-in default (`DEFAULT` image,
+`QUALIFIED_CHILE` scope). Resolved settings are frozen when the envelope is
+sent; later default changes do not change already-frozen envelopes.
+Defaults can still affect unsent envelopes that omit an override.
+
+Set a persistent default:
+
+```bash
+curl -X PUT https://api.lexgo.cl/v1/settings \
+  -H "Authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"signature":{"bg_image":"DEFAULT","bg_image_scope":"ALL"}}'
+```
+
+Override it for one envelope by including:
+
+```json
+{"settings":{"signature":{"type":"INTERNATIONAL","style":"SIMPLE","bg_image_scope":"INTERNATIONAL"}}}
+```
+
+The sandbox `NON-BINDING DOCUMENT` marking on document pages is independent
+of this signature-area background. Disabling `bg_image` never removes the
+sandbox marking. Qualified Chile sandbox signing follows the genuine provider
+journey and team-recipient requirements in the [Sandbox guide](../guides/sandbox.md).
+The background scope changes appearance; select `signature.type` separately
+to choose the signing journey.
 
 ---
 
@@ -389,7 +440,7 @@ Configure default email validation (2FA) behavior.
 ### Request
 
 ```bash
-curl -X PUT https://api.lexgo.cl/api/v1/settings \
+curl -X PUT https://api.lexgo.cl/v1/settings \
   -H "Authorization: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -401,7 +452,7 @@ curl -X PUT https://api.lexgo.cl/api/v1/settings \
       "sender_email": "noreply@example.com"
     },
     "documents": {
-      "document_id_enabled": "TRUE",
+      "include_page_id": "TRUE",
       "custom_page_id": "DOC-ID:"
     },
     "emails": {
