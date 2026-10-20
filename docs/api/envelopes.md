@@ -68,7 +68,8 @@ Keep that ID and correct the envelope with `PUT /v1/envelopes/:id` before sendin
             "order": 1,
             "status": "CREATED"
           }
-        ]
+        ],
+        "metadata": {}
       },
       "request_id": "req-abc123"
     }
@@ -104,6 +105,138 @@ can still return HTTP 200 with `status: ERROR`; inspect the validation fields.
 | `recipients[key][...]` | object | Yes | Recipient parameters (see below) |
 | `placements[index][...]` | object | Yes | Placement parameters (see below) |
 | `settings[...]` | object | No | Override default settings (see [Settings API](settings.md)) |
+| `metadata` | object | No | Your own JSON object describing this envelope (customer, reference, cost center...). See [Envelope metadata](#envelope-metadata) |
+
+### Envelope metadata
+
+`metadata` is an optional JSON object that **you** define when you create an envelope.
+Lexgo stores it as opaque context. It never changes recipients, signing, permissions,
+pricing or billing. Its purpose is to let you attribute usage to your own end customers:
+the same object appears on the matching row of the FES and FEA Excel usage reports (see
+[Usage reports](../guides/usage-reports.md)). You keep the mapping between your keys and
+your end customers; Lexgo does not interpret them.
+
+**Accepted values.** `metadata` must be a JSON object. Its values can be any valid JSON:
+strings, numbers, booleans, `null`, arrays and nested objects. Unicode is preserved. Strings and keys cannot contain the NUL character (`\u0000`), which the storage cannot hold.
+
+**Numbers.** Integers are kept exactly. A number written with a fraction or an exponent is read as a 64-bit float (about 15 to 17 significant digits), so send exact decimals as strings. A nonzero number too large or too small for a 64-bit float, such as `1e400` or `1e-400`, is rejected with HTTP 422; no number is ever changed to zero, infinity or a string. The database stores numbers as decimals and returns them in expanded notation: `1e20` comes back as `100000000000000000000` and `1.5e300` as a 301-digit integer. The 8,192-byte limit is therefore checked against the object as it is returned after storage, so metadata with many large exponents is rejected even when the request itself is short.
+Send it in a JSON body to keep value types. In `multipart/form-data` use bracket
+notation (`metadata[customer_id]=customer-123`); form values are always strings.
+Key order is not preserved: Lexgo returns the same keys and values, ordered by its own
+storage rules.
+
+**Limits.** Metadata is validated before the envelope is created. Nothing is truncated.
+
+| Limit | Value |
+|-------|-------|
+| Serialized size | 8,192 bytes (UTF-8 JSON, counted in bytes, not characters) |
+| Nesting depth | 5 levels (the root object is level 1; every nested object or array adds one) |
+| Keys | 100 in total across all levels |
+
+**Omitted or invalid.** If you omit `metadata`, the envelope is created normally and
+`metadata` reads back as `{}`. Envelopes created before this field existed also read as
+`{}`. A value that is not an object (a string, array, number or `null`) or that exceeds a
+limit is rejected with HTTP 422 and **no envelope is created**. Unlike an envelope
+validation failure, this response has no envelope ID to correct: fix the request and send
+it again.
+
+```json title="metadata-error-response"
+{
+  "error": "Invalid metadata",
+  "message": "metadata is nested 6 levels deep; the maximum is 5",
+  "request_id": "req-abc123"
+}
+```
+
+**Scope.** Metadata belongs to the API key that created the envelope. It is returned only
+by authenticated requests made with that key (`POST`, `GET`, `PUT` and send/void
+responses). It is not shown to signers, not included in webhook payloads, not searchable,
+and cannot be changed after creation. API request logs keep the request body you sent,
+so do not put secrets in metadata.
+
+**Complete example.** Create an envelope for one of your end customers:
+
+```json title="metadata-create-request"
+{
+  "name": "Service agreement - Acme Ltda.",
+  "documents": {
+    "0": { "name": "service-agreement.pdf", "base64": "BASE64_PDF_CONTENT" }
+  },
+  "recipients": {
+    "0": { "name": "Ana Rojas", "email": "ana.rojas@example.com", "order": 1 }
+  },
+  "placements": {
+    "0": {
+      "document_key": "0",
+      "recipient_key": "0",
+      "type": "SIGNATURE",
+      "coordinates": { "page": 0, "top": 650, "left": 100 }
+    }
+  },
+  "metadata": {
+    "customer_id": "customer-123",
+    "cost_center": "sales",
+    "reference": "invoice-456",
+    "contract": { "id": "C-2026-0042", "tags": ["renewal", "premium"] }
+  }
+}
+```
+
+The response echoes the stored object:
+
+```json title="metadata-create-response"
+{
+  "envelope": {
+    "id": "abc-123-def-456",
+    "name": "Service agreement - Acme Ltda.",
+    "status": "CREATED",
+    "metadata": {
+      "customer_id": "customer-123",
+      "cost_center": "sales",
+      "reference": "invoice-456",
+      "contract": { "id": "C-2026-0042", "tags": ["renewal", "premium"] }
+    }
+  },
+  "request_id": "req-abc123"
+}
+```
+
+Retrieve it later with the same API key:
+
+```bash
+curl https://api.lexgo.cl/v1/envelopes/abc-123-def-456 \
+  -H "Authorization: YOUR_API_KEY"
+```
+
+```json title="metadata-get-response"
+{
+  "envelope": {
+    "id": "abc-123-def-456",
+    "status": "CREATED",
+    "metadata": {
+      "customer_id": "customer-123",
+      "cost_center": "sales",
+      "reference": "invoice-456",
+      "contract": { "id": "C-2026-0042", "tags": ["renewal", "premium"] }
+    }
+  },
+  "request_id": "req-def456"
+}
+```
+
+**In the Excel usage reports.** The FES and FEA reports have a detail sheet, *Detalle de
+firmas*, with one row per signed envelope. Both reports end that sheet with a single
+**Metadata** column holding the envelope's metadata as one line of JSON text, for example
+`{"cost_center":"sales","customer_id":"customer-123", ...}`. It is the same column in the
+reports Lexgo generates every month for billing clients and in any report generated on
+request, because both use the same generator. Parse the cell with any JSON parser and look
+up your own keys (for example `JSON.parse(cell)["customer_id"]`). The cell is plain text,
+never a formula, and keeps Unicode and nested values. Envelopes without metadata, including
+all envelopes created before this field existed, have an empty cell. The summary and
+pricing sheets are unchanged: they describe many envelopes, so they carry no metadata, and
+totals are not grouped by metadata. Lexgo does not offer a column per metadata key,
+searching or filtering by metadata, retroactive metadata for older envelopes, or metadata
+in webhooks.
 
 **Document Parameters:**
 
@@ -241,6 +374,7 @@ Retrieve details of a specific envelope.
 | `sent_at` | datetime | When envelope was sent to recipients |
 | `completed_at` | datetime | When all signatures completed |
 | `recipients` | array | List of recipients with their status |
+| `metadata` | object | The caller-defined object sent at creation; `{}` when none was sent (see [Envelope metadata](#envelope-metadata)) |
 
 ---
 

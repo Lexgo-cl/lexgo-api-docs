@@ -89,6 +89,7 @@ nav:
     - Custom Email Templates: guides/email-templates.md
     - Webhook Integration: guides/webhook-integration.md
     - Evidence Sheet: guides/evidence-sheet.md
+    - Usage Reports: guides/usage-reports.md
     - File Uploads Guide: guides/uploads-guide.md
   - Examples:
     - Create and Send Envelope: examples/create-envelope.md

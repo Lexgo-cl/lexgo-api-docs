@@ -74,6 +74,21 @@ known envelope first.
 }
 ```
 
+### 422 Unprocessable Content
+
+#### Invalid Envelope Metadata
+`POST /v1/envelopes` with a `metadata` value that is not a JSON object or exceeds the
+documented size, depth or key limits. No envelope is created, so there is no envelope ID
+to correct. This also covers a nonzero number outside the 64-bit float range (for example `1e400` or `1e-400`), an object larger than 8,192 bytes after storage (many large exponents), and a string containing the NUL character. See [Envelope metadata](envelopes.md#envelope-metadata).
+
+```json
+{
+  "error": "Invalid metadata",
+  "message": "metadata is 9004 bytes when serialized; the maximum is 8192",
+  "request_id": "req_abc123"
+}
+```
+
 ### 405 Method Not Allowed
 
 #### Invalid Envelope State

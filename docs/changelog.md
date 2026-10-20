@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the canceled signing-reminder announcement and examples.
 
 ### Added
+- **API key usage reporting**: Settings -> API keys now shows **Signed documents** per key and, once history is reconciled, **Last used**; the row menu offers **Export usage report** for month to date (UTC, up to the exact request instant) or a previous month, sent as the key's FES/FEA workbooks, with the Metadata column, to the requesting administrator's verified email. No change to the API.
+  - Docs: [Usage reports](guides/usage-reports.md)
+- **Envelope metadata**: `POST /v1/envelopes` accepts an optional `metadata` JSON object (8,192 bytes, 5 levels, 100 keys). It is returned as `metadata` by authenticated envelope responses (`{}` for older envelopes), never in webhooks, and appears as a single **Metadata** column in the FES and FEA Excel usage reports' detail sheet. Invalid metadata returns HTTP 422 before any envelope is created.
+  - Docs: [Envelope metadata](api/envelopes.md#envelope-metadata), [Usage reports](guides/usage-reports.md)
 - **Signature background image (watermark) scope**: `settings.signature.bg_image_scope` (`QUALIFIED_CHILE`/`INTERNATIONAL`/`ALL`, default `QUALIFIED_CHILE`; legacy `FEA`/`FES` aliases remain accepted) controls whether the `bg_image` watermark is composited behind the signature on the FEA (`QUALIFIED_CHILE`) path, the FES (`INTERNATIONAL`) path, or both. Per-envelope override and persistent API-key default, same precedence as other `signature` settings. No behavior change for existing integrations.
   - Docs: [Signature Appearance Settings](api/settings.md#signature-background-image)
 - **Sandbox vs Live guide**: Documents sandbox as an API key stage on `api.lexgo.cl`
