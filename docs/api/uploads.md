@@ -2,11 +2,14 @@
 
 Upload PDF files to envelopes using the Upload API.
 
+!!! danger "Legacy streaming uploads are retired and not supported"
+    The streaming upload routes (`POST`/`GET /v1/envelopes/{id}/uploads`, `GET .../uploads/{id}` and the `PUT` to the returned `upload_url`) are **legacy**. They were retired by an owner decision (issue #1207), which retains presigned URLs. The routes still exist in the source and are documented below only with that status. On beta, `POST .../uploads` returned an `upload_url` on `https://api-staging.lexgo.cl`, a host that does not resolve, and the gateway Lambda's own API base URL is configured with the same host (CDK `service-api-layer`); this is retirement evidence, not a request to fix it. Do not guess another prefix and do not call the gateway directly. **Use [presigned uploads](#presigned-uploads).**
+
 ## When to Use
 
 Use the upload API when:
 
-- File size is larger than 1MB
+- File size is larger than 1MB (base64 documents in envelope create/update are limited to 5 MB)
 - You want to reduce API request time
 - You want to avoid base64 encoding overhead
 
@@ -38,6 +41,8 @@ Use standard envelope creation (base64) when:
 ## API Endpoints
 
 ### Create Upload
+
+*Legacy, retired per issue #1207, not supported. Use [presigned uploads](#presigned-uploads).*
 
 Generate an upload URL for a document.
 
@@ -77,7 +82,7 @@ curl -X POST https://api.lexgo.cl/v1/envelopes/abc-123/uploads \
     "order": 0,
     "custom_key": "doc1",
     "expires_at": "2025-11-20T17:05:15Z",
-    "max_file_size": 52428800,
+    "max_file_size": 10485760,
     "envelope_id": "abc-123",
     "status": "PENDING",
     "instructions": {
@@ -90,17 +95,20 @@ curl -X POST https://api.lexgo.cl/v1/envelopes/abc-123/uploads \
 }
 ```
 
-**Note:** `max_file_size` is 52428800 bytes (50 MB).
+**Note:** `max_file_size` is the legacy value 10485760 bytes (10 MB); it is not a promise that a 10 MB upload completes. Use [presigned uploads](#presigned-uploads) (up to 50 MB).
 
 **Error Responses:**
 
+- `400` - Missing `file_name` or `order`, `file_name` over 100 characters, or `content_type` other than `application/pdf`
 - `404` - Envelope not found
-- `405` - Envelope not in CREATED status (already sent)
-- `422` - Validation error (duplicate order, missing fields)
+- `405` - Envelope not in CREATED status (already sent); the body also has `current_status`
+- `422` - Another active upload already exists for this `order`
 
 ---
 
 ### Upload File
+
+*Legacy, retired per issue #1207, not supported. Use [presigned uploads](#presigned-uploads).*
 
 Upload PDF to the upload URL.
 
@@ -120,7 +128,7 @@ curl -X PUT "{upload_url}" \
 - Set `Content-Type: application/pdf` header
 - Send raw binary file (not base64)
 - URL expires in 1 hour
-- Max file size: 50MB
+- Legacy max file size: 10 MB (larger requests are rejected with `413`)
 
 **Response:**
 
@@ -136,6 +144,8 @@ curl -X PUT "{upload_url}" \
 ---
 
 ### Check Upload Status
+
+*Legacy, retired per issue #1207, not supported. For presigned uploads use `GET .../presigned_uploads/{id}`.*
 
 Check processing status of an upload.
 
@@ -170,6 +180,8 @@ curl https://api.lexgo.cl/v1/envelopes/abc-123/uploads/upload_abc123 \
 ---
 
 ### List All Uploads
+
+*Legacy, retired per issue #1207, not supported. The same records are returned by `GET .../presigned_uploads`.*
 
 Get all uploads for an envelope.
 
@@ -208,6 +220,70 @@ curl "https://api.lexgo.cl/v1/envelopes/abc-123/uploads?status=completed" \
 
 ---
 
+## Presigned Uploads
+
+Presigned uploads send the PDF straight to storage with a presigned URL, and accept files up to 50 MB. They are the supported upload flow. The workflow, states and constraints are the same as above; only the endpoints and the upload step differ.
+
+**Endpoints:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/v1/envelopes/:envelope_id/presigned_uploads` | Create a presigned upload |
+| `GET` | `/v1/envelopes/:envelope_id/presigned_uploads` | List presigned uploads (optional `?status=`: `pending`, `uploaded`, `processing`, `completed`, `failed`, `expired`) |
+| `GET` | `/v1/envelopes/:envelope_id/presigned_uploads/:id` | Check one presigned upload |
+
+`POST` takes the same parameters and validation as [Create Upload](#create-upload) (`file_name` and `order` required, `custom_key` and `content_type` optional, PDF only).
+
+```bash
+curl -X POST https://api.lexgo.cl/v1/envelopes/abc-123/presigned_uploads \
+  -H "Authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"file_name": "contract.pdf", "order": 0, "custom_key": "doc1"}'
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "presigned_upload": {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "presigned_url": "https://<storage-host>/...?X-Amz-Signature=...",
+    "file_name": "contract.pdf",
+    "order": 0,
+    "custom_key": "doc1",
+    "content_type": "application/pdf",
+    "expires_at": "2025-11-20T17:05:15Z",
+    "max_file_size": 52428800,
+    "envelope_id": "abc-123",
+    "status": "PENDING",
+    "instructions": {
+      "method": "PUT",
+      "headers": { "Content-Type": "application/pdf" },
+      "note": "Upload file directly to presigned_url using PUT method with Content-Type header"
+    }
+  },
+  "request_id": "req_xyz"
+}
+```
+
+**Upload the file** with a `PUT` of the raw PDF bytes to `presigned_url`. Send the same `Content-Type` header as in `instructions.headers`, and do **not** send your Lexgo `Authorization` header; the signature is in the URL.
+
+```bash
+curl -X PUT "{presigned_url}" \
+  -H "Content-Type: application/pdf" \
+  --data-binary @contract.pdf
+```
+
+The URL expires 1 hour after creation (`expires_at`). Processing starts after the file arrives; poll `GET .../presigned_uploads/:id` or subscribe to `envelope.file_uploaded`. The status values are the [Upload States](#upload-states). The status object has `id`, `envelope_id`, `status`, `order`, `file_name`, `custom_key`, `content_type`, `upload_url`, `file_id`, `error_message`, `expires_at`, `uploaded_at`, `processed_at`, `created_at` and `updated_at` (absent values are omitted); the list response is `{"presigned_uploads": [...], "total": n}`. The `upload_url` field in these status objects is the `/uploads` streaming URL and is not used for presigned uploads.
+
+**Error Responses:** the same as [Create Upload](#create-upload) (`400`, `404`, `405`, `422`), plus `500` (`Failed to generate presigned URL`). An unknown presigned upload ID returns `404` (`Presigned upload not found`).
+
+!!! note "Staging host"
+    In staging environments the `upload_url` returned by `/uploads` and the status endpoints is built on `https://api-staging.lexgo.cl`, while the staging API host is `https://api-beta.lexgo.cl`. The `api-staging` host does not resolve on beta (retirement evidence; see the notice at the top of this page). Presigned uploads do not use this host.
+
+---
+
 ## Webhook Alternative to Polling
 
 Subscribe to `envelope.file_uploaded` for real-time notifications instead of polling:
@@ -228,7 +304,9 @@ See [Webhooks API](webhooks.md) for complete documentation.
 
 ---
 
-## Complete Workflow Example
+## Complete Workflow Example (legacy streaming, retired)
+
+*Legacy, retired per issue #1207, not supported. Kept for reference only; follow the presigned workflow instead.*
 
 ```bash
 # Step 1: Create envelope
@@ -320,7 +398,7 @@ curl https://api.lexgo.cl/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
 ## Constraints
 
 - **File type**: PDF only (`application/pdf`)
-- **Max file size**: 50 MB
+- **Max file size**: 50 MB for [presigned uploads](#presigned-uploads) (legacy `/uploads`: 10 MB, retired) (base64 in envelope create/update: 5 MB)
 - **Max filename**: 100 characters
 - **URL expiration**: 1 hour
 - **Single use**: Each upload URL can only be used once

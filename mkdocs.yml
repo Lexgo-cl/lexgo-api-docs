@@ -91,6 +91,7 @@ nav:
     - Evidence Sheet: guides/evidence-sheet.md
     - Usage Reports: guides/usage-reports.md
     - File Uploads Guide: guides/uploads-guide.md
+    - Postman collection: postman/README.md
   - Examples:
     - Create and Send Envelope: examples/create-envelope.md
     - Email Validation Flow: examples/email-validation-flow.md

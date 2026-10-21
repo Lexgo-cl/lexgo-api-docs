@@ -39,6 +39,16 @@ mkdocs build
 
 Output will be in the `site/` directory.
 
+To validate links and nav (warnings fail the build), run from the repository root with the dependencies from `api/requirements.txt` installed:
+
+```bash
+python3 -m mkdocs build --strict -f api/mkdocs.yml -d /tmp/api-site
+```
+
+### Postman collection
+
+The Postman collection and environment files live in `api/docs/postman/` (see `api/docs/postman/README.md`).
+
 ## Documentation Structure
 
 ```
@@ -54,18 +64,22 @@ api/
 │   ├── api/               # API reference
 │   │   ├── overview.md
 │   │   ├── envelopes.md
+│   │   ├── uploads.md
 │   │   ├── recipients.md
 │   │   ├── validations.md
 │   │   ├── settings.md
 │   │   ├── webhooks.md
-│   │   ├── reminders.md   # Client API signing reminders
+│   │   ├── reminders.md   # Client API signing reminders (not in nav)
 │   │   └── errors.md
 │   ├── guides/            # Feature guides
 │   │   ├── sandbox.md
 │   │   ├── email-validation.md
 │   │   ├── email-templates.md
 │   │   ├── webhook-integration.md
-│   │   └── evidence-sheet.md
+│   │   ├── evidence-sheet.md
+│   │   ├── usage-reports.md
+│   │   └── uploads-guide.md
+│   ├── postman/           # Postman collection and environments
 │   ├── examples/          # Code examples
 │   │   ├── create-envelope.md
 │   │   ├── email-validation-flow.md

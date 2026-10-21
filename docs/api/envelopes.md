@@ -338,18 +338,31 @@ Retrieve details of a specific envelope.
         "id": "abc-123-def-456",
         "name": "Employment Contract - John Doe",
         "status": "IN_PROGRESS",
+        "errors": [],
+        "warnings": [],
         "created_at": "2024-01-15T10:30:00Z",
-        "sent_at": "2024-01-15T10:35:00Z",
+        "updated_at": "2024-01-15T11:00:00Z",
+        "evidence_document_url": null,
+        "error_reason": null,
+        "evidence_generated_at": null,
+        "documents": [],
         "recipients": [
           {
             "id": "signer-001",
-            "name": "John Doe",
-            "email": "john.doe@example.com",
+            "custom_key": "0",
             "order": 1,
             "status": "SIGNED_ALL",
-            "signed_at": "2024-01-15T11:00:00Z"
+            "created_at": "2024-01-15T10:30:00Z",
+            "updated_at": "2024-01-15T11:00:00Z",
+            "name": "John Doe",
+            "name_label": "Name:",
+            "email": "john.doe@example.com",
+            "email_label": "Email:"
           }
-        ]
+        ],
+        "placements": [],
+        "settings": {...},
+        "metadata": {}
       },
       "request_id": "req-def456"
     }
@@ -370,10 +383,16 @@ Retrieve details of a specific envelope.
 | `id` | string | Unique envelope identifier |
 | `name` | string | Envelope name |
 | `status` | string | Current lifecycle status, including CREATED, SENDING, IN_PROGRESS, SUCCESS, VOIDED, ERROR |
-| `created_at` | datetime | When envelope was created |
-| `sent_at` | datetime | When envelope was sent to recipients |
-| `completed_at` | datetime | When all signatures completed |
-| `recipients` | array | List of recipients with their status |
+| `errors` | array | Validation errors (see [Overview](overview.md#error-response)) |
+| `warnings` | array | Non-blocking warnings |
+| `created_at`, `updated_at` | datetime | Creation and last update timestamps |
+| `evidence_document_url` | string | Evidence sheet URL once generated, otherwise `null` |
+| `evidence_generated_at` | datetime | When the evidence sheet was generated, otherwise `null` |
+| `error_reason` | string | Failure reason when one was recorded, otherwise `null` |
+| `documents` | array | Documents attached to the envelope |
+| `recipients` | array | Recipients with `id`, `custom_key`, `order`, `status` and the identity fields you sent (`name`, `email`, `tax_id` and their `*_label` fields); `private_signature_link` appears when the status is `LINK_GENERATED` |
+| `placements` | array | Signature, approval and witness placements |
+| `settings` | object | Effective `emails`, `documents`, `signature_flow`, `signature` and `validations` settings |
 | `metadata` | object | The caller-defined object sent at creation; `{}` when none was sent (see [Envelope metadata](#envelope-metadata)) |
 
 ---
@@ -509,7 +528,7 @@ A missing envelope returns 404. Do not blindly retry after a network timeout.
 
 ### Void Envelope
 
-Cancel an envelope before completion.
+Cancel an envelope that is `IN_PROGRESS`.
 
 **Endpoint:** `PUT /v1/envelopes/:id/void`
 
@@ -537,15 +556,15 @@ Cancel an envelope before completion.
 === "Response (405 Method Not Allowed)"
     ```json
     {
-      "error": "Cannot void completed envelope",
+      "error": "Envelope not in IN_PROGRESS status",
       "request_id": "req-stu901"
     }
     ```
 
 **Behavior:**
 - Changes envelope status to `VOIDED`
-- Invalidates all recipient access tokens
-- Cannot void envelopes that are already `SUCCESS`
+- Recipients are emailed only if `emails.envelope_voided` is `TRUE` in the envelope settings
+- Only `IN_PROGRESS` envelopes can be voided; any other status (`CREATED`, `SENDING`, `ERROR`, `SUCCESS`, `VOIDED`) returns `405`
 
 ---
 
@@ -584,6 +603,14 @@ Retrieve the evidence sheet URL for a completed envelope.
 **Requirements:**
 - Envelope must be in `SUCCESS` status
 - All recipients must have completed signing
+
+**Other responses:**
+
+- `404` - Envelope not found
+- `422` - Hybrid sandbox envelopes (simulated output) have no cryptographic evidence sheet:
+  `{"success": false, "evidence_document_url": null, "error_code": "hybrid_evidence_unavailable", "error": "...", "request_id": "..."}`
+- `500` - The envelope is `SUCCESS` but the evidence URL is not available yet:
+  `{"success": false, "evidence_document_url": null, "request_id": "..."}`. Retry after a few seconds.
 
 **Performance:**
 - First request: 1-3 seconds (generates PDF)
@@ -915,12 +942,4 @@ except:
 
 ## Rate Limits
 
-Envelope creation is subject to rate limits based on your plan:
-
-| Plan | Envelopes/Hour | Envelopes/Day |
-|------|----------------|---------------|
-| Starter | 10 | 100 |
-| Professional | 50 | 500 |
-| Enterprise | Custom | Custom |
-
-Contact support to increase limits.
+There are no per-plan envelope quotas. Requests are throttled per client IP address (60 requests per minute); see [Rate Limiting](overview.md#rate-limiting).

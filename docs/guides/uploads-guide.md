@@ -4,9 +4,14 @@ Step-by-step guide to upload PDF files to envelopes.
 
 ## When to Use This
 
-Use file uploads when your PDF files are larger than 1MB. For smaller files, use the standard base64 envelope creation method.
+Use file uploads when your PDF files are larger than 1MB. For smaller files, use the standard base64 envelope creation method (base64 documents are limited to 5 MB). Use [presigned uploads](../api/uploads.md#presigned-uploads) (up to 50 MB); the legacy streaming uploads (`/uploads`) are retired and not supported.
+
+!!! danger "Legacy guide: streaming uploads are retired and not supported"
+    This guide describes the legacy streaming upload (`POST .../uploads` and a `PUT` to the returned `upload_url`), retired by an owner decision (issue #1207) that retains presigned URLs. The routes still exist in the source and are documented here only with that status. On beta the returned `upload_url` was on `https://api-staging.lexgo.cl`, a host that does not resolve, and the gateway Lambda is configured with the same host; this is retirement evidence, not a workaround request. Do not guess a prefix or call the gateway directly. **Use [presigned uploads](../api/uploads.md#presigned-uploads)**: the workflow (create the envelope, request a URL, upload, wait, verify, send) is the same, only the upload step differs and the file goes to the presigned URL without the API key.
 
 ## Quick Start
+
+*The steps below are the legacy streaming flow, retired per issue #1207 and not supported. Follow the presigned workflow instead.*
 
 ### Step 1: Create Envelope (No Documents)
 
@@ -464,7 +469,7 @@ curl https://api.lexgo.cl/v1/envelopes/$ENVELOPE_ID/uploads/$UPLOAD_ID \
 # Common errors:
 # - "Invalid PDF format" -> corrupted file
 # - "Encrypted PDF" -> remove password
-# - "File too large" -> must be <50MB
+# - "File too large" -> use presigned uploads (up to 50MB); the legacy /uploads limit was 10MB (HTTP 413)
 ```
 
 ### Cannot create upload (422 error)

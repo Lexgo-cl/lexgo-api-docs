@@ -79,15 +79,25 @@ curl -X POST https://api.lexgo.cl/v1/webhooks \
 {
   "success": true,
   "webhook": {
-    "id": "webhook_123",
+    "id": "6f1c0e8a-3b52-4d7e-9a41-2c8d5e7b9f10",
     "url": "https://your-app.com/webhooks/lexgo",
-    "subscriptions": "envelope.success,envelope.evidence_generated,recipient.signed_all",
     "auth_type": "HEADER",
-    "created_at": "2025-11-01T10:00:00Z"
+    "subscriptions": "envelope.success,envelope.evidence_generated,recipient.signed_all",
+    "created_at": "2025-11-01T10:00:00Z",
+    "updated_at": "2025-11-01T10:00:00Z"
   },
   "request_id": "req_abc123"
 }
 ```
+
+**Request fields:**
+
+| Field | Description |
+|-------|-------------|
+| `url` | Endpoint that receives the POST deliveries |
+| `subscriptions` | Comma-separated event names from the lists above. Unknown names are silently dropped |
+| `auth_type` | `header` (send `auth` as the `Authorization` header of each delivery) or `no_auth` (default). Returned uppercase (`HEADER`, `NO_AUTH`) |
+| `auth` | Header value used when `auth_type` is `header`; never returned in responses |
 
 ## Webhook Payload
 
@@ -284,6 +294,12 @@ curl https://api.lexgo.cl/v1/webhooks \
   -H "Authorization: YOUR_API_KEY"
 ```
 
+The response is `{"webhooks": [...], "request_id": "..."}`, ordered by creation time. Each item has `id`, `url`, `auth_type`, `subscriptions`, `created_at` and `updated_at`.
+
+## Get Webhook
+
+`GET /v1/webhooks/{webhook_id}` returns `{"webhook": {...}, "request_id": "..."}` with the same fields. An unknown ID returns `404` with `{"error": "Webhook not found"}`.
+
 ## Update Webhook
 
 ```bash
@@ -295,12 +311,16 @@ curl -X PUT https://api.lexgo.cl/v1/webhooks/{webhook_id} \
   }'
 ```
 
+All fields are optional. The response is `{"success": true, "webhook": {...}, "request_id": "..."}`; an unknown ID returns `404`.
+
 ## Delete Webhook
 
 ```bash
 curl -X DELETE https://api.lexgo.cl/v1/webhooks/{webhook_id} \
   -H "Authorization: YOUR_API_KEY"
 ```
+
+The response is `{"success": true, "webhook": {...}, "request_id": "..."}` with the deleted webhook; an unknown ID returns `404`.
 
 ## Delivery and Retries
 

@@ -1,0 +1,42 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 402 >>
+stream
+BT /F1 18 Tf 72 760 Td (Lexgo Sign sample - fictional) Tj ET
+BT /F1 11 Tf 72 730 Td (Fictional test document. Not a contract. No real parties.) Tj ET
+BT /F1 11 Tf 72 700 Td ([[SIGN-HERE-1]]) Tj ET
+BT /F1 11 Tf 72 680 Td ([[SIGN-HERE-2]]) Tj ET
+% lexgo sign fictional padding 000000 ........................................
+% lexgo sign fictional padding 000001 ........................................
+endstream
+endobj
+6 0 obj
+<< /Title (Lexgo Sign sample - fictional) /Producer (Lexgo Sign docs fixture generator) >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000247 00000 n 
+0000000317 00000 n 
+0000000769 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R /Info 6 0 R /ID [<4c6578676f5369676e53616d706c6531><4c6578676f5369676e53616d706c6531>] >>
+startxref
+875
+%%EOF

@@ -1,16 +1,16 @@
 # API Overview
 
-Lexgo exposes two public HTTP surfaces. This overview covers both; most pages
-under API Reference document the LexgoSign `/v1` envelope API.
+Lexgo exposes two HTTP surfaces. The pages under API Reference document the
+LexgoSign `/v1` envelope API.
 
-| Surface | Base path | Auth |
-|---------|-----------|------|
-| **LexgoSign API** | `/v1` | API key in `Authorization` |
-| **Client API** | `/client` | OAuth Bearer (`client` scope) + `X-Enterprise-Id` |
+| Surface | Base URL | Auth |
+|---------|----------|------|
+| **LexgoSign API** | `https://api.lexgo.cl/v1` | API key in `Authorization` |
+| **OAuth Client API** | `/api/client` on the web app host (`https://app.lexgo.cl/api/client`) | OAuth Bearer (`client` scope) + `X-Enterprise-Id` |
 
 !!! note "Gateway path"
-    Externally, `api.lexgo.cl` strips the `/api` prefix. Call
-    `https://api.lexgo.cl/v1/...` or `https://api.lexgo.cl/client/...`.
+    Externally, `api.lexgo.cl` strips the `/api` prefix, so the LexgoSign API is
+    `https://api.lexgo.cl/v1/...`.
 
 ## Base URL
 
@@ -20,14 +20,13 @@ under API Reference document the LexgoSign `/v1` envelope API.
 https://api.lexgo.cl/v1
 ```
 
-### Client API
+### OAuth Client API
 
 ```
-https://api.lexgo.cl/client
+https://app.lexgo.cl/api/client
 ```
 
-!!! note "Gateway path"
-    Externally, the `/api` prefix is stripped: call `https://api.lexgo.cl/client/…`
+The OAuth Client API lives at `/api/client` on the web app host, not on `api.lexgo.cl`. This documentation set does not cover it.
 
 !!! note "Sandbox vs Live"
     Sandbox is an API **key stage**, not a different host. Use the same
@@ -46,12 +45,14 @@ Authorization: YOUR_API_KEY
 
 See [Authentication](../getting-started/authentication.md) for details.
 
-### Client API
+### OAuth Client API
 
 ```
 Authorization: Bearer <oauth_access_token>
-X-Enterprise-Id: <enterprise_uuid>
+X-Enterprise-Id: <enterprise_id>
 ```
+
+`X-Enterprise-Id` is the integer ID of an enterprise the access token is authorized for.
 
 
 
@@ -190,28 +191,21 @@ Use request IDs when contacting support to help us debug issues quickly.
 
 ## Rate Limiting
 
-Rate limits protect the API from abuse and ensure fair usage:
+The web application throttles requests per client IP address: more than 60 requests
+in one minute from the same IP are rejected with HTTP `429`. Requests are not
+counted per plan, and responses do not include `X-RateLimit-*` headers.
+
+Email validation endpoints have their own limits:
 
 | Resource | Limit | Window |
 |----------|-------|--------|
 | Email validation codes | 5 requests | 1 hour |
 | Code verification attempts | 3 attempts | Per code |
 | Cooldown period | 60 seconds | Between codes |
-| API requests | Based on plan | 1 hour |
 
-### Rate Limit Headers
+### Exceeded Validation Limit
 
-Responses include rate limit information:
-
-```
-X-RateLimit-Limit: 5
-X-RateLimit-Remaining: 3
-X-RateLimit-Reset: 1635724800
-```
-
-### Exceeded Rate Limit
-
-When rate limited, you'll receive a 429 status:
+When a validation limit is exceeded, you receive a 429 status:
 
 ```json
 {
@@ -269,14 +263,6 @@ All API requests must use HTTPS. Requests made over plain HTTP will fail:
 https://api.lexgo.cl/v1/envelopes  ✅
 http://api.lexgo.cl/v1/envelopes   ❌
 ```
-
-## CORS
-
-Cross-Origin Resource Sharing (CORS) is supported for browser-based applications.
-
-Allowed origins:
-- `https://app.lexgo.cl`
-- Custom domains (contact support to whitelist)
 
 ## Errors
 

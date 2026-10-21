@@ -244,6 +244,9 @@ except requests.HTTPError as e:
     if e.response.status_code == 405:
         # Envelope not ready yet
         logger.info(f"Envelope {envelope_id} not completed")
+    elif e.response.status_code == 422:
+        # error_code "hybrid_evidence_unavailable": simulated hybrid sandbox envelope
+        logger.info(f"No evidence sheet for simulated envelope {envelope_id}")
     elif e.response.status_code == 404:
         # Envelope not found
         logger.error(f"Envelope {envelope_id} not found")
@@ -307,9 +310,15 @@ print(f"Status: {envelope['status']}")
 
 **Solution**: Wait 30-60 seconds and request again. Background update will have completed.
 
+### "hybrid_evidence_unavailable" (422 Error)
+
+**Cause**: The envelope is a simulated hybrid sandbox envelope. Its output is simulated, so no cryptographic evidence sheet exists. The response has `success: false`, `evidence_document_url: null` and `error_code: "hybrid_evidence_unavailable"`.
+
+**Solution**: None; do not retry.
+
 ### Generation Failed (500 Error)
 
-**Cause**: PDF generation or S3 upload failed.
+**Cause**: The envelope is `SUCCESS` but the evidence document URL is not available (generation or upload has not completed or failed). The response is `{"success": false, "evidence_document_url": null}`.
 
 **Solution**:
 - Retry the request after a few seconds

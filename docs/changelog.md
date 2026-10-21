@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stable webhook delivery IDs across scheduled retries, all three scheduled retries now execute, and asynchronous sending no longer enqueues the same in-progress notification twice. Delivery remains best effort; see [Webhook integration](guides/webhook-integration.md).
 - Corrected send method/path, placement requirements, signing types versus appearance styles, and HTTP versus envelope error handling.
 - Removed the canceled signing-reminder announcement and examples.
+- Corrected the API reference against the implementation: void is allowed only from `IN_PROGRESS`; `GET /v1/envelopes/:id` response fields; evidence `422` (`hybrid_evidence_unavailable`) and `500`; recipient request shape and statuses; settings and webhook response fields; upload limits (10 MB for `/uploads`, 50 MB for presigned uploads, 5 MB for base64); documented presigned uploads; removed unimplemented rate-limit headers and plan quotas.
 
 ### Added
 - **API key usage reporting**: Settings -> API keys now shows **Signed documents** per key and, once history is reconciled, **Last used**; the row menu offers **Export usage report** for month to date (UTC, up to the exact request instant) or a previous month, sent as the key's FES/FEA workbooks, with the Metadata column, to the requesting administrator's verified email. No change to the API.

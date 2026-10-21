@@ -100,9 +100,12 @@ Retrieve current configuration settings.
       }
     }
   },
+  "environment": "sandbox",
   "request_id": "req_abc123"
 }
 ```
+
+`environment` is the stage of the API key (`sandbox` or `live`).
 
 ---
 
@@ -134,11 +137,11 @@ curl -X PUT https://api.lexgo.cl/v1/settings \
 
 ```json
 {
-  "success": true,
   "settings": {
     "branding": {...},
     "signature_flow": {...}
   },
+  "environment": "sandbox",
   "request_id": "req_def456"
 }
 ```
