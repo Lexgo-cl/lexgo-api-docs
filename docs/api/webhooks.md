@@ -344,6 +344,7 @@ See [Webhook Integration](../guides/webhook-integration.md).
 ## Best Practices
 
 1. **Authenticate**: If configured, compare the Authorization header to your shared secret; the payload has no documented cryptographic signature
+   (optionally also [allowlist the webhook source IPs](../guides/webhook-integration.md#source-ip-allowlisting))
 2. **Respond quickly**: Return 200 status immediately
 3. **Process async**: Handle payload in background job
 4. **Log events**: Track all webhook deliveries

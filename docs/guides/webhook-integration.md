@@ -17,6 +17,31 @@ Retries reuse the delivery `id`; independent events or webhook subscriptions
 can have different IDs for the same resource. Do not assume one webhook
 corresponds to one signing action or that events arrive in order.
 
+## Source IP Allowlisting
+
+As an additional control, your receiver firewall or WAF can restrict incoming
+HTTPS `POST` requests on the webhook endpoint to the Lexgo webhook source IPv4
+addresses below. These are the addresses Lexgo sends webhooks *from*; they are
+not used for, and do not restrict, requests you send *to* the Lexgo API.
+
+| Environment | Source IPv4 (allow each as `/32`) |
+|-------------|-----------------------------------|
+| Production, address 1 | `3.148.9.93/32` |
+| Production, address 2 | `18.221.200.15/32` |
+| Staging (`api-beta.lexgo.cl`) | `54.243.84.24/32` |
+
+- Allow **both** production addresses: any production delivery, including
+  retries, can come from either one.
+- Webhooks for sandbox and live API keys on `api.lexgo.cl` are production
+  deliveries. Staging is a separate Lexgo deployment, not the sandbox stage;
+  see [Sandbox vs staging](sandbox.md#sandbox-vs-staging).
+- Allow only the individual addresses for your environment, not cloud
+  provider ranges or the addresses of Lexgo API load balancers.
+
+An allowlist does not authenticate a webhook or its payload. Keep the HTTPS
+endpoint and verify the `auth_type: "header"` Authorization value as described
+above.
+
 ## Best-Effort Delivery
 
 Failures and timeouts have up to three scheduled retries after approximately
