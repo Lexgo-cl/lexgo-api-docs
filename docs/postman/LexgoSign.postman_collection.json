@@ -6552,7 +6552,7 @@
                 "send"
               ]
             },
-            "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes; on staging use approved beta team aliases (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
+            "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
           },
           "response": [
             {
@@ -6578,7 +6578,7 @@
                     "send"
                   ]
                 },
-                "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes; on staging use approved beta team aliases (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
+                "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
               },
               "status": "Accepted",
               "code": 202,
@@ -6615,7 +6615,7 @@
                     "send"
                   ]
                 },
-                "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes; on staging use approved beta team aliases (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
+                "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
               },
               "status": "Method Not Allowed",
               "code": 405,
@@ -6652,7 +6652,7 @@
                     "send"
                   ]
                 },
-                "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes; on staging use approved beta team aliases (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
+                "description": "EFFECT. Queues the invitation emails to every recipient of the draft and moves it to SENDING (then IN_PROGRESS). Emails are real. Use only your own inboxes (see README). Requires a CREATED envelope without validation errors. Public docs: api/envelopes.md."
               },
               "status": "Not Found",
               "code": 404,

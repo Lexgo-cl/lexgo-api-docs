@@ -53,17 +53,6 @@ The email of the recipient '…' is not in the sandbox allowed email list: …
 Only emails listed under your organization members can be used as sandbox
 recipients.
 
-## Sandbox vs staging
-
-Do not confuse sandbox keys with Lexgo's staging environment:
-
-| Concept | What it is | Host |
-|---------|------------|------|
-| **Sandbox key** | Test stage of your production API key | `api.lexgo.cl` |
-| **Staging** | Separate Lexgo deployment for Lexgo QA | `api-beta.lexgo.cl` |
-
-Integrators almost always want a **sandbox key** on `api.lexgo.cl`, not staging.
-
 ## Recommended test flow
 
 1. Create a **sandbox** API key in Lexgo (**Settings** → **API Keys**)

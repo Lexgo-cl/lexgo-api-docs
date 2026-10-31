@@ -1,6 +1,6 @@
 # Postman collection
 
-A ready-to-run Postman collection for the Lexgo Sign public API (`/v1`): 52 requests with tests and saved examples, three environments and three fictional PDF fixtures. It covers drafts with several documents, an attachment and several recipients (signer, approver, witness), envelope metadata, presigned uploads (small/medium/large) with a bounded wait for the worker, sending, 2FA validation codes, settings, webhooks and one optional OAuth Client API call.
+A ready-to-run Postman collection for the Lexgo Sign public API (`/v1`): 52 requests with tests and saved examples, two environments (local and production) and three fictional PDF fixtures. It covers drafts with several documents, an attachment and several recipients (signer, approver, witness), envelope metadata, presigned uploads (small/medium/large) with a bounded wait for the worker, sending, 2FA validation codes, settings, webhooks and one optional OAuth Client API call.
 
 Every request has a description with its effect and a pointer to the matching documentation page. Folders are numbered and tagged **SAFE** (unsent drafts with fictional data) or **EFFECT** (real emails, tenant-wide changes, outbound HTTP, real Alerts).
 
@@ -10,7 +10,6 @@ Every request has a description with its effect and a pointer to the matching do
 |------|---------|
 | [LexgoSign.postman_collection.json](LexgoSign.postman_collection.json) | The collection (Postman v2.1): requests, tests, saved examples, guards |
 | [LexgoSign.local.postman_environment.json](LexgoSign.local.postman_environment.json) | Environment for a local development server |
-| [LexgoSign.staging.postman_environment.json](LexgoSign.staging.postman_environment.json) | Environment for staging (`api-beta.lexgo.cl`) |
 | [LexgoSign.production.postman_environment.json](LexgoSign.production.postman_environment.json) | Environment for production (`api.lexgo.cl`) |
 | [fixtures/small.pdf](fixtures/small.pdf) | Fictional one-page PDF, about 1 KB |
 | [fixtures/medium.pdf](fixtures/medium.pdf) | Fictional one-page PDF, about 200 KB |
@@ -35,10 +34,10 @@ Configuration variables are set in the environment files. Generated and state va
 
 | Variable | Defined in | Purpose |
 |----------|------------|---------|
-| `api_url` | environment | Sign API host only: `http://localhost:3000` (local), `https://api-beta.lexgo.cl` (staging), `https://api.lexgo.cl` (production). Requests are `{{api_url}}/{{api_prefix}}/...` |
-| `api_prefix` | collection default `v1`; environment may override | Path prefix: `v1` on gateway hosts (staging, production), `api/v1` for a local server (set in the local environment) |
+| `api_url` | environment | Sign API host only: `http://localhost:3000` (local), `https://api.lexgo.cl` (production). Requests are `{{api_url}}/{{api_prefix}}/...` |
+| `api_prefix` | collection default `v1`; environment may override | Path prefix: `v1` on the gateway host (`api.lexgo.cl`), `api/v1` for a local server (set in the local environment) |
 | `api_key` | environment (secret, empty) | Sign API key, sent as the `Authorization` header value |
-| `app_url` | environment | Web host of the OAuth Client API: `http://localhost:3000`, `https://beta.lexgo.cl`, `https://app.lexgo.cl` |
+| `app_url` | environment | Web host of the OAuth Client API: `http://localhost:3000`, `https://app.lexgo.cl` |
 | `oauth_token` | environment (secret, empty) | Doorkeeper access token, only for folder 7 |
 | `enterprise_id` | environment (empty) | Integer enterprise id sent as `X-Enterprise-Id`, only for folder 7 |
 | `document_id` | environment (empty) | Integer id of an existing contract document, only for folder 7 |
@@ -74,14 +73,14 @@ Resolution order: a variable set in a request's local scope or a data file wins 
 
 ### Email addresses and sandbox keys
 
-The defaults are fictional `example.com` addresses. A **sandbox** key only accepts recipient emails that belong to your own team; with the defaults, the create requests return `422` with envelope status `ERROR` and "not in the sandbox allowed email list". Set `fixture_signer_email`, `fixture_approver_email` and `fixture_witness_email` to team addresses (a **live** key accepts any address). For a bounded send smoke on staging use only the approved beta own-inbox aliases of the form `contacto+<alias>@beta.lexgo.cl`, never real external addresses.
+The defaults are fictional `example.com` addresses. A **sandbox** key only accepts recipient emails that belong to your own team; with the defaults, the create requests return `422` with envelope status `ERROR` and "not in the sandbox allowed email list". Set `fixture_signer_email`, `fixture_approver_email` and `fixture_witness_email` to team addresses (a **live** key accepts any address).
 
 ## Migrating an older environment
 
 An environment from an earlier collection (for example one whose scripts use `pm.environment.set` for ids) can hold copies of the generated variables, and an old `api_url` that includes a path. Either fix works:
 
 1. **Import a fresh environment** from this folder and copy only your `api_key` (and, if you use them, `oauth_token` and `api_key_other_tenant`) into it, privately. Do not paste keys into files you commit.
-2. **Or edit the old environment:** set `api_url` to the host only, with no path and no trailing slash (`https://api.lexgo.cl`, `https://api-beta.lexgo.cl` or `http://localhost:3000`), and delete these variables from it, because the collection owns them:
+2. **Or edit the old environment:** set `api_url` to the host only, with no path and no trailing slash (`https://api.lexgo.cl` or `http://localhost:3000`), and delete these variables from it, because the collection owns them:
    - `envelope_id`
    - `json_envelope_id`
    - `upload_envelope_id`
@@ -99,7 +98,7 @@ An environment from an earlier collection (for example one whose scripts use `pm
    - `upload_poll_attempts`
    - `storage_skipped`
 
-Keep `api_key`, `api_url` (host only) and, optionally, `api_prefix`, `fixture_signer_email`, `fixture_approver_email` and `fixture_witness_email`. Without `api_prefix` the collection uses `v1`, which is correct for the gateway hosts; a local server needs `api_prefix` set to `api/v1`.
+Keep `api_key`, `api_url` (host only) and, optionally, `api_prefix`, `fixture_signer_email`, `fixture_approver_email` and `fixture_witness_email`. Without `api_prefix` the collection uses `v1`, which is correct for the gateway host; a local server needs `api_prefix` set to `api/v1`.
 
 If a shadowing variable or a `api_url` with a path is left behind, the first request of the run fails with an error that names it and nothing is sent.
 
@@ -107,7 +106,6 @@ If a shadowing variable or a `api_url` with a path is left behind, the first req
 
 Rails serves the API under `/api/v1`. The API Gateway strips `/api`, so with `api_url` as the host and `api_prefix` as the path prefix the external URLs are:
 
-- staging: `https://api-beta.lexgo.cl/v1` (`api_prefix` = `v1`)
 - production: `https://api.lexgo.cl/v1` (`api_prefix` = `v1`)
 - local development server: `http://localhost:3000/api/v1` (`api_prefix` = `api/v1`, set in the local environment)
 
@@ -138,7 +136,7 @@ Guards:
 - **Tenant denial.** Envelopes belong to the API key that created them. Set `api_key_other_tenant` to any different key (ideally of another enterprise); the request is skipped while it is empty.
 - **Folder 2 (supported default).** Presigned uploads allow 50 MB. Each storage `PUT` is an **outbound call to the storage host**, sends the fixture as the raw body with `Content-Type: application/pdf`, uses request auth `noauth` and carries **no** `Authorization` header (the collection has no collection-level auth, and a test asserts the header is absent). The presigned `PUT` requests are skipped when `api_url` points to localhost because the local dev server cannot complete a real storage upload. A draft created without files is answered with `422` and status `ERROR` ("no PDF files"), but it still accepts presigned slots; the slot's `custom_key` matches the placement's `document_key`. The upload walkthrough draft works the same way: it has one placement per file to upload (`document_key` `fixture-small`, `fixture-medium`, `fixture-large`) and is therefore answered with `422`/`ERROR` until the uploads complete; the worker then links each placement to the uploaded file whose `custom_key` (or id, or numeric position) equals the placement's `document_key`. Placement storage is verified on a local server; the linking after a real storage upload is verified only by the poll when the PUTs actually run.
 - **Pending, completed, timeout.** Right after the PUTs the uploads are `PENDING` or `UPLOADED` and the draft is still `ERROR` (placements point at files that are not there yet). An asynchronous worker then creates the files and links the placements. The request "Wait for uploads to complete" reads the draft and its uploads and repeats itself, at most `upload_poll_max` times (40 by default) about 3 seconds apart, until the draft is `CREATED` without errors, has 4 documents and 4 placements that are all linked to a document, and 3 uploads are `COMPLETED`. It fails at once on a `FAILED` or `EXPIRED` upload, and after the last attempt it says whether uploads are still pending (a PUT or the worker did not finish) or relationships are missing. `setNextRequest` repeats only in the Collection Runner and newman; in a manual single Send, press Send again until the assertions pass. Before a manual Send in folder 3 (EFFECT), wait until the poll passes. On localhost the PUTs are skipped (`storage_skipped` is set to `yes`) and the poll is skipped too. The uploads list and the presigned list return the same records for an envelope.
-- **Legacy streaming uploads are retired.** The older Lambda and API Gateway upload path (`POST /envelopes/{id}/uploads` and a `PUT` to the `upload_url` it returns) is not part of this collection. The owner decision in issue #1207 retains presigned URLs and retires that path; its returned `upload_url` also points at a legacy host that does not resolve on beta. The presigned flow in folder 2 is the only supported upload flow. The old request shapes are kept only as a retirement reference in the repository file `docs/archive/postman/legacy-lambda-streaming-uploads.md` (not runnable, not importable).
+- **Legacy streaming uploads are retired.** The older Lambda and API Gateway upload path (`POST /envelopes/{id}/uploads` and a `PUT` to the `upload_url` it returns) is not part of this collection. The owner decision in issue #1207 retains presigned URLs and retires that path; its returned `upload_url` also points at a legacy host that is not guaranteed to resolve. The presigned flow in folder 2 is the only supported upload flow. The old request shapes are kept only as a retirement reference in the repository file `docs/archive/postman/legacy-lambda-streaming-uploads.md` (not runnable, not importable).
 - **Folder 3.** Send emails real recipients. Void only works for `IN_PROGRESS` envelopes, so right after Send a `405` is expected and accepted by the tests; evidence needs a `SUCCESS` envelope.
 - **Folder 5.** Changes configuration for the whole API key. Run the three requests in order; the read request clears any earlier backup and saves the current values of every field the update touches and the last request sends them back. Update and Restore are skipped unless a complete backup exists, and Restore builds its JSON body in a script so quotes, backslashes, newlines and double-brace text in a value stay intact. The update uses the documented default values, so it only changes tenants that customised them.
 - **Folder 7.** Optional and isolated. It uses the OAuth Client API, not the Sign API: a Doorkeeper access token (scope `client`) in `oauth_token`, the integer `enterprise_id` in `X-Enterprise-Id`, and an enterprise permission on the document. It creates a real Alert and reminder; the email is sent on the fire date (alert date minus 3 days). It is skipped while `oauth_token`, `enterprise_id` or `document_id` is empty.
@@ -162,7 +160,7 @@ newman run LexgoSign.postman_collection.json \
   --folder "2. SAFE - Uploads (draft only)"
 ```
 
-Staging uses the same command with `LexgoSign.staging.postman_environment.json`. Production safe check (folder 0 only):
+Production safe check (folder 0 only):
 
 ```bash
 newman run LexgoSign.postman_collection.json \

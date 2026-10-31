@@ -24,19 +24,17 @@ HTTPS `POST` requests on the webhook endpoint to the Lexgo webhook source IPv4
 addresses below. These are the addresses Lexgo sends webhooks *from*; they are
 not used for, and do not restrict, requests you send *to* the Lexgo API.
 
-| Environment | Source IPv4 (allow each as `/32`) |
-|-------------|-----------------------------------|
-| Production, address 1 | `3.148.9.93/32` |
-| Production, address 2 | `18.221.200.15/32` |
-| Staging (`api-beta.lexgo.cl`) | `54.243.84.24/32` |
+| Lexgo webhook source IPv4 (allow each as `/32`) |
+|-------------------------------------------------|
+| `3.148.9.93/32` |
+| `18.221.200.15/32` |
 
-- Allow **both** production addresses: any production delivery, including
-  retries, can come from either one.
-- Webhooks for sandbox and live API keys on `api.lexgo.cl` are production
-  deliveries. Staging is a separate Lexgo deployment, not the sandbox stage;
-  see [Sandbox vs staging](sandbox.md#sandbox-vs-staging).
-- Allow only the individual addresses for your environment, not cloud
-  provider ranges or the addresses of Lexgo API load balancers.
+- Allow **both** addresses: any delivery, including retries, can come from
+  either one.
+- Webhooks for both [sandbox and live](sandbox.md) API keys on `api.lexgo.cl`
+  come from these same two addresses.
+- Allow only these individual addresses, not cloud provider ranges or the
+  addresses of Lexgo API load balancers.
 
 An allowlist does not authenticate a webhook or its payload. Keep the HTTPS
 endpoint and verify the `auth_type: "header"` Authorization value as described

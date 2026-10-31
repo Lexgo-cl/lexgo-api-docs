@@ -3,7 +3,7 @@
 Upload PDF files to envelopes using the Upload API.
 
 !!! danger "Legacy streaming uploads are retired and not supported"
-    The streaming upload routes (`POST`/`GET /v1/envelopes/{id}/uploads`, `GET .../uploads/{id}` and the `PUT` to the returned `upload_url`) are **legacy**. They were retired by an owner decision (issue #1207), which retains presigned URLs. The routes still exist in the source and are documented below only with that status. On beta, `POST .../uploads` returned an `upload_url` on `https://api-staging.lexgo.cl`, a host that does not resolve, and the gateway Lambda's own API base URL is configured with the same host (CDK `service-api-layer`); this is retirement evidence, not a request to fix it. Do not guess another prefix and do not call the gateway directly. **Use [presigned uploads](#presigned-uploads).**
+    The streaming upload routes (`POST`/`GET /v1/envelopes/{id}/uploads`, `GET .../uploads/{id}` and the `PUT` to the returned `upload_url`) are **legacy**. They were retired by an owner decision (issue #1207), which retains presigned URLs. The routes still exist in the source and are documented below only with that status. The `upload_url` these routes return is not guaranteed to resolve; this is retirement evidence, not a request to fix it. Do not guess another prefix and do not call the gateway directly. **Use [presigned uploads](#presigned-uploads).**
 
 ## When to Use
 
@@ -278,9 +278,6 @@ curl -X PUT "{presigned_url}" \
 The URL expires 1 hour after creation (`expires_at`). Processing starts after the file arrives; poll `GET .../presigned_uploads/:id` or subscribe to `envelope.file_uploaded`. The status values are the [Upload States](#upload-states). The status object has `id`, `envelope_id`, `status`, `order`, `file_name`, `custom_key`, `content_type`, `upload_url`, `file_id`, `error_message`, `expires_at`, `uploaded_at`, `processed_at`, `created_at` and `updated_at` (absent values are omitted); the list response is `{"presigned_uploads": [...], "total": n}`. The `upload_url` field in these status objects is the `/uploads` streaming URL and is not used for presigned uploads.
 
 **Error Responses:** the same as [Create Upload](#create-upload) (`400`, `404`, `405`, `422`), plus `500` (`Failed to generate presigned URL`). An unknown presigned upload ID returns `404` (`Presigned upload not found`).
-
-!!! note "Staging host"
-    In staging environments the `upload_url` returned by `/uploads` and the status endpoints is built on `https://api-staging.lexgo.cl`, while the staging API host is `https://api-beta.lexgo.cl`. The `api-staging` host does not resolve on beta (retirement evidence; see the notice at the top of this page). Presigned uploads do not use this host.
 
 ---
 
