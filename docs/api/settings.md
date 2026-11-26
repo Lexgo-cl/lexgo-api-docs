@@ -161,7 +161,7 @@ Customize company branding and contact information.
 | `branding[url_signature_flow]` | string | Custom TLS domain for signature flows (contact support to enable) |
 | `branding[name]` | string | Company name shown in emails and signature flow |
 | `branding[reply_to]` | string | Reply-to email address for envelope invitations |
-| `branding[sender_email]` | string | From email address for envelope invitations |
+| `branding[sender_email]` | string | From email address for envelope invitations. Must be a verified sender — see [Custom Sender Email](#custom-sender-email). Use `DEFAULT` to send from Lexgo's address |
 
 **Example:**
 
@@ -180,6 +180,30 @@ Customize company branding and contact information.
 
 !!! note "Custom Domain"
     Contact support to enable a custom TLS domain for `url_signature_flow`. DNS validation and routing instructions will be provided.
+
+### Custom Sender Email
+
+By default, envelope invitations are sent from Lexgo's address. Set `branding[sender_email]` to send them from your own address instead (for example `noreply@example.com`).
+
+A custom sender must be a **verified identity in Amazon SES**, the email service Lexgo sends through. Either the exact address or its domain can be verified: a verified `example.com` also covers `noreply@example.com` and `noreply@mail.example.com`. Verification is not self-service — contact Lexgo support with the address or domain you want to use, and wait for confirmation that it is verified before setting it. Verifying a domain involves adding DNS records to that domain.
+
+Lexgo does not fall back to its own address when a custom sender is not verified. Instead, the request that sets it is rejected with `422` and nothing is changed:
+
+- `PUT /v1/settings` with a new `branding[sender_email]`: the stored settings are kept as they were.
+- `POST /v1/envelopes` with a `settings.branding.sender_email` override: the envelope is not created.
+- `PUT /v1/envelopes/:id` with a `settings.branding.sender_email` override: the envelope is left unchanged.
+
+```json
+{
+  "error": "Invalid settings",
+  "message": "Sender not verified in SES: noreply@example.com. Verify it before using it — see https://docs.lexgo.cl/api/settings/#custom-sender-email",
+  "request_id": "req_abc123"
+}
+```
+
+In Spanish the message reads `Remitente no verificado en SES: …`. To fix it, have the address or its domain verified (see above) and retry, or use `DEFAULT` to send from Lexgo's address.
+
+If the message says the sender could not be verified right now, Lexgo could not reach SES to check it; retry later or use `DEFAULT`.
 
 ---
 

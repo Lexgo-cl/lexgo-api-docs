@@ -343,6 +343,9 @@ To enable email validation for an envelope, configure it in the envelope setting
 !!! tip "When to Use"
     Enable email validation for sensitive documents, legal contracts, or when identity verification is critical.
 
+!!! warning "Biometric validation needs an available verification provider"
+    The `validations.biometric` setting is `"FALSE"` by default. When it is `"TRUE"`, every recipient must complete identity verification before signing, and that requirement is always enforced. If no permitted verification provider is available for the envelope, its recipients cannot complete the step, so signing cannot proceed. An authorized, provisioned simulated FEA envelope completes the step with a demo identity check instead. A sandbox API key on its own does not provision that.
+
 ---
 
 ## Webhook Events

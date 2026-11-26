@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- A token placement whose document search does not finish is no longer stored as a token that was not found. The envelope returns status `ERROR` with an error naming the placement, cannot be sent, and is repaired by sending its placements again with `PUT /v1/envelopes/:id`.
+  - Docs: [Placements](api/envelopes.md)
+- A placement token is now found when it is the last word of a page or sits on a slightly slanted line of separately drawn characters. Before, such a token kept empty coordinates and the signature went to an extra page.
 - Envelope creation now returns HTTP 422 for synchronous validation failures, preserving the envelope ID and actionable `envelope.errors` for correction. Valid creation remains HTTP 200; asynchronous sending remains HTTP 202. Integrations preparing upload-first envelopes must retain the ID from the 422 response.
 - Stable webhook delivery IDs across scheduled retries, all three scheduled retries now execute, and asynchronous sending no longer enqueues the same in-progress notification twice. Delivery remains best effort; see [Webhook integration](guides/webhook-integration.md).
 - Corrected send method/path, placement requirements, signing types versus appearance styles, and HTTP versus envelope error handling.

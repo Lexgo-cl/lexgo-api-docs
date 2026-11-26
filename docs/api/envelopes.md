@@ -284,6 +284,8 @@ Use `placements[index][field]` where `index` is a numeric index (0, 1, 2...).
 !!! note "Positioning"
     For SIGNATURE placements, coordinates (top/left/page) or a token position the signature. If neither is provided, signatures are added on extra pages. APPROVER and WITNESS placements must omit both coordinates and token. ATTACHMENT documents cannot have SIGNATURE placements. Do not mix placement types for the same document/recipient pair; at most one APPROVER or WITNESS is allowed for that pair.
 
+    If the document search for a placement's token does not finish, the placement gets `coordinates` `{"token_scan": "incomplete"}` and the envelope is returned with status `ERROR` and an error naming the placement. The envelope cannot be sent until a `PUT /v1/envelopes/:id` with `placements` searches the document again. A token that the search does not find keeps empty coordinates, as before.
+
 **Example with Placements:**
 
 ```http
